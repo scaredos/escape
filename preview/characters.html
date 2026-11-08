@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Characters</title></head><body><script type="module">
+import * as THREE from 'three';
+import { stage, params } from './_stage.ts';
+import { buildCharacter, buildCharacterLOD, lookFromRoster, civilianVariant, LOOK_IDS } from '../src/render/characters/index.ts';
+import { triCount } from '../src/render/vehicles/kit.ts';
+const { r, scene, cam } = stage(12);
+const anims = {
+  fugitive_driver: { state: 'walk', speed: 1.7, held: 'none' }, fugitive_brains: { state: 'run', speed: 6, held: 'none' },
+  fugitive_muscle: { state: 'idle', speed: 0, held: 'pistol' }, fugitive_fixer: { state: 'handsup', speed: 0, held: 'none' },
+  soldier_rifleman: { state: 'idle', speed: 0, held: 'rifle' }, soldier_officer: { state: 'walk', speed: 1.7, held: 'pistol' },
+  soldier_heavy: { state: 'crouch', speed: 0, held: 'rifle' }, soldier_marksman: { state: 'idle', speed: 0, held: 'rifle', aimPitch: 0.35 },
+  civ_beach: { state: 'sprint', speed: 9, held: 'none' }, civ_elder: { state: 'walk', speed: 1.4, held: 'none' },
+};
+const extra = [{ state: 'idle', speed: 0, held: 'none' }, { state: 'seated', speed: 0, held: 'none' }, { state: 'air', speed: 0, held: 'none' },
+  { state: 'crouchwalk', speed: 2.5, held: 'shotgun', aimPitch: -0.1 }];
+const looks = [...LOOK_IDS.map((id) => [lookFromRoster(id), anims[id]]), ...[1, 2, 3, 4].map((sd, i) => [civilianVariant(sd), extra[i]])];
+const close = params.get('close');
+const chars = [];
+const tris = {};
+looks.forEach(([look, a], i) => {
+  if (close && i !== (close === 'walk' ? 0 : close === 'aim' ? 4 : close === 'pistol' ? 2 : 11)) return;
+  const c = buildCharacter(look);
+  c.root.position.set(0, 0, close ? 0 : (i - (looks.length - 1) / 2) * 0.8);
+  scene.add(c.root);
+  chars.push([c, a]);
+  tris[look.id] = triCount(c.root);
+});
+if (params.get('lod')) { const m = buildCharacterLOD(looks[0][0]); m.position.set(0, 0, 9); scene.add(m); tris.lod = triCount(m); }
+const frames = +(params.get('frames') ?? 40);
+for (let f = 0; f < frames; f++) for (const [c, a] of chars) c.update(1 / 60, a);
+const mv = new THREE.Vector3(); chars.forEach(([c, a]) => { if (a.held !== 'none') c.muzzleWorld(mv); });
+console.log('TRIS', JSON.stringify(tris));
+if (close) { if (params.get('side')) cam.position.set(0.3, 1.5, 3.0); else cam.position.set(2.6, 1.5, close === 'walk' ? 2.0 : 1.2); cam.lookAt(0, 0.9, 0); }
+else { cam.position.set(10.5, 2.4, 1.0); cam.lookAt(0, 0.85, 0); }
+r.render(scene, cam);
+window.__ready = true;
+</script></body></html>

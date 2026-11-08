@@ -2,7 +2,6 @@
 // into a half-float scratch pair; a second pass builds the normal (wrap-around central differences) and writes the
 // final RGBA8 targets: BC (sRGB) and NR (normal xy, roughness, height). Recipes: kit/reference/blender/bake_textures.py.
 import * as THREE from 'three';
-import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
 export type TexSet = 'plaster' | 'stone' | 'asphalt' | 'paving' | 'roof' | 'sand' | 'desert' | 'grass' | 'lot' | 'tiles' | 'water';
 export interface TexPair { bc: THREE.Texture; nr: THREE.Texture; tile: number /* metres */; }
@@ -15,12 +14,11 @@ const L = (hex: string) => {
   const v = [0, 2, 4].map((i) => lin(parseInt(hex.slice(i, i + 2), 16) / 255).toFixed(5));
   return `vec3(${v.join(',')})`;
 };
-/** Piecewise-linear colour ramp over hex stops (positions in 0..1), clamped at the ends. */
-const R = (t: string, stops: [number, string][]) => {
-  const p = stops.map((s) => s[0].toFixed(3)), c = stops.map((s) => L(s[1]));
-  while (p.length < 6) { p.push('1.0'); c.push(c[c.length - 1]); }
-  return `ramp(${t}, float[6](${p.join(',')}), vec3[6](${c.join(',')}), ${stops.length})`;
-};
+/** Piecewise-linear colour ramp over hex stops (positions in 0..1), clamped at the ends; emitted as straight-line code. */
+const R = (t: string, stops: [number, string][]) => `(${L(stops[0][1])}${stops.slice(1).map(([p, c], i) => {
+  const [p0, c0] = stops[i];
+  return ` + (${L(c)} - ${L(c0)}) * clamp(((${t}) - ${p0.toFixed(3)}) / ${(p - p0).toFixed(3)}, 0., 1.)`;
+}).join('')})`;
 
 const VS = /* glsl */ `in vec3 position; void main() { gl_Position = vec4(position.xy, 0., 1.); }`;
 
@@ -121,22 +119,23 @@ float ss(float a, float b, float x) { return smoothstep(a, b, x); }
 vec3 mx(vec3 a, vec3 b, float t) { return mix(a, b, clamp(t, 0., 1.)); }
 float sq(float x) { return x * x; }
 // fBm on the 4D torus: scale = features per metre, octaves = detail + 1, lacunarity 2, gain = rough.
-// Octaves above the texel Nyquist are skipped (they would only alias); the sum keeps the full amplitude norm.
-float N(float sc, float det, float ro, float dist, float su, float sv, float seed) {
-  float a = U * TAU, b = V * TAU, ru = uTile * su / TAU, rv = uTile * sv / TAU;
-  vec4 p = vec4(cos(a) * ru, sin(a) * ru, cos(b) * rv, sin(b) * rv) * sc + off4(seed);
-  if (dist > 0.) p += dist * vec4(snoise(p + off4(seed + .25)), snoise(p + off4(seed + .5)), snoise(p + off4(seed + .75)), snoise(p + off4(seed + 99.)));
-  float nyq = .5 * uRes / (uTile * max(su, sv)), sum = 0., amp = 1., tot = 0., f = 1.;
-  for (int i = 0; i < 9; i++) {
-    if (float(i) > det) break;
-    if (sc * f <= nyq) sum += amp * snoise(p * f);
-    tot += amp; amp *= ro; f *= 2.;
+// Octaves finer than one feature per texel are skipped (they would only alias); the sum keeps the full amplitude norm.
+// Every N()/warp()/vor() of a recipe becomes one draw of a shared layer program into a half-float texture array
+// (see layered()); recipe programs only texelFetch them. ANGLE/D3D compiles every program twice (link + first draw)
+// and snoise alone costs ~50 ms per compile, so keeping noise out of the 12 recipe programs is what keeps the bake fast.
+uniform vec4 uA, uB;                        // noise: A = (scale, detail, rough, dist), B = (su, sv, seed, -)
+float layer() {
+  float a = U * TAU, b = V * TAU, ru = uTile * uB.x / TAU, rv = uTile * uB.y / TAU;
+  vec4 p = vec4(cos(a) * ru, sin(a) * ru, cos(b) * rv, sin(b) * rv) * uA.x + off4(uB.z), d = vec4(0.);
+  float nyq = uRes / (uTile * max(uB.x, uB.y)), sum = 0., amp = 1., tot = 0., f = 1.;
+  int nd = uA.w > 0. ? 4 : 0, n = nd + int(uA.y) + 1;
+  for (int k = 0; k < n; k++) {             // k < nd: the 4 domain-distortion samples, then the octaves
+    bool isD = k < nd;
+    float v = 0.;
+    if (isD || uA.x * f <= nyq) v = snoise(isD ? p + off4(uB.z + .25 * float(k + 1)) : (p + uA.w * d) * f);
+    if (isD) d[k] = v; else { sum += amp * v; tot += amp; amp *= uA.z; f *= 2.; }
   }
   return .5 + .5 * sum / tot;
-}
-float N(float sc, float det, float ro, float seed) { return N(sc, det, ro, 0., 1., 1., seed); }
-vec2 warp(float sc, float amt, float seed) {
-  return (vec2(N(sc, 3., .5, seed), N(sc, 3., .5, seed + .5)) - .5) * amt / uTile;
 }
 float cellsN(float sc) { return max(1., floor(sc * uTile + .5)); }
 // Periodic Worley: (F1 distance in cell units, per-cell random colour).
@@ -181,14 +180,6 @@ vec4 bricks(float rows, float cmin, float cmax, float seed, bool stagger, float 
 float line(float e0, float e1, float x, float px) {
   float w = max(1., px / e1);
   return (1. - ss(e0 * w, e1 * w, x)) / w;
-}
-vec3 ramp(float t, float p[6], vec3 c[6], int n) {
-  if (t <= p[0]) return c[0];
-  for (int i = 1; i < 6; i++) {
-    if (i >= n) break;
-    if (t <= p[i]) return mix(c[i - 1], c[i], (t - p[i - 1]) / max(p[i] - p[i - 1], 1e-6));
-  }
-  return c[n - 1];
 }
 float dome(float d, float r, float p) { return sqrt(max(1. - sq(d / r), 0.)) * p; }
 `;
@@ -366,11 +357,52 @@ float box(float x0, float y0, float x1, float y1) {
 void paint(float m, vec3 col, float r, float h) { gBC = mix(gBC, col, m); gR = mix(gR, r, m); gH = mix(gH, h, m); gA = mix(gA, 0., m); }
 `;
 
-const passOne = (body: string, extra = '') => `${LIB}${extra}
-#define DESERT_R .6
+/** Turns each N(...) / warp(...) / vor(...) / vorEdge(...) of a recipe into a layer row (rendered by the shared noise /
+ *  Worley programs into texture arrays); the body then reads NZ(i) and VZ(j). All arguments are numeric literals. */
+function layered(body: string) {
+  const nRows: number[][] = [], vRows: number[][] = [];
+  const nums = (s: string) => s.split(',').map(Number);
+  const addN = (a: number[]) => { nRows.push(a.length === 4 ? [a[0], a[1], a[2], 0, 1, 1, a[3]] : a); return nRows.length - 1; };
+  const warpRows = (s: string) => { const [sc, , seed] = nums(s); return [addN([sc, 3, .5, seed]), addN([sc, 3, .5, seed + .5])]; };
+  body = body.replace(/\b(vor|vorEdge)\(([^,()]+),\s*(vec2\(0\.\)|warp\(([^()]*)\)),\s*([^,()]+)\)/g,
+    (_, fn: string, sc: string, _w: string, warp: string | undefined, seed: string) => {
+      const [wa, wb] = warp ? warpRows(warp) : [-1, -1];
+      vRows.push([+sc, +seed, fn === 'vorEdge' ? 1 : 0, warp ? nums(warp)[1] : 0, wa, wb]);
+      return fn === 'vorEdge' ? `VZ(${vRows.length - 1}).x` : `VZ(${vRows.length - 1})`;
+    });
+  body = body.replace(/\bwarp\(([^()]*)\)/g, (_, s: string) => {
+    const [wa, wb] = warpRows(s);
+    return `((vec2(NZ(${wa}), NZ(${wb})) - .5) * ${nums(s)[1].toFixed(4)} / uTile)`;
+  });
+  body = body.replace(/\bN\(([^()]*)\)/g, (_, s: string) => `NZ(${addN(nums(s))})`);
+  if (nRows.length > MAXN || vRows.length > MAXV || /\b(N|vor|vorEdge|warp)\(/.test(body)
+    || [...nRows, ...vRows].some((r) => r.some(isNaN))) throw new Error('textures: bad layer table');
+  return { body, nRows, vRows };
+}
+
+// Layer programs: noise (one N() per draw) and Worley (one vor()/vorEdge() per draw, warp from the noise layers).
+const MAXN = 16, MAXV = 6;
+const ARR = /* glsl */ `
+uniform highp sampler2DArray uNZ, uVZ;
+#define NZ(i) texelFetch(uNZ, ivec3(ivec2(gl_FragCoord.xy), i), 0).r
+#define VZ(j) texelFetch(uVZ, ivec3(ivec2(gl_FragCoord.xy), j), 0)
+`;
+const NOISE_FS = `${LIB}
+void main() { U = gl_FragCoord.x / uRes; V = gl_FragCoord.y / uRes; o0 = vec4(layer()); o1 = o0; }`;
+const WORLEY_FS = `${LIB}${ARR}
+uniform vec4 uW;                            // (scale, seed, edge?, warp metres)
+uniform ivec2 uWL;                          // warp noise layers, or -1
 void main() {
   U = gl_FragCoord.x / uRes; V = gl_FragCoord.y / uRes;
-  vec3 bc; float r, h, a = 1.;
+  vec2 w = uWL.x >= 0 ? (vec2(NZ(uWL.x), NZ(uWL.y)) - .5) * uW.w / uTile : vec2(0.);
+  o0 = uW.z > .5 ? vec4(vorEdge(uW.x, w, uW.y)) : vor(uW.x, w, uW.y); o1 = o0;
+}`;
+const ALL: [string, string][] = [...(Object.keys(SETS) as TexSet[]).map((n) => [n, BODIES[n]] as [string, string]), ['window', WINDOW_BODY]];
+const passOne = (body: string, win: boolean) => `${LIB}${ARR}${win ? WINDOW_LIB : ''}
+#define DESERT_R .7
+void main() {
+  U = gl_FragCoord.x / uRes; V = gl_FragCoord.y / uRes;
+  vec3 bc = vec3(0.); float r = 0., h = 0., a = 1.;
   ${body}
   o0 = vec4(bc, a); o1 = vec4(r, h, 0., 1.);
 }`;
@@ -402,8 +434,8 @@ void main() {
   dx = (B1(p + ivec2(1, 0)) - B1(p - ivec2(1, 0))) / (2. * uMpp.x);
   dy = (B1(p + ivec2(0, 1)) - B1(p - ivec2(0, 1))) / (2. * uMpp.y);
   float sh = 0., bs = 0.; int br = int(uBR);
-  for (int k = 1; k <= 15; k++) { if (float(k) > uK) break; sh = max(sh, Hh(p - ivec2(0, k)) - h0 - float(k) * uMpp.y * .9); }
-  for (int j = -6; j <= 6; j++) for (int i = -6; i <= 6; i++) { if (abs(i) > br || abs(j) > br) continue; bs += Hh(p + ivec2(i, j)); }
+  for (int k = 1; k <= int(uK); k++) sh = max(sh, Hh(p - ivec2(0, k)) - h0 - float(k) * uMpp.y * .9);
+  for (int j = -br; j <= br; j++) for (int i = -br; i <= br; i++) bs += Hh(p + ivec2(i, j));
   float cav = max(bs / float((2 * br + 1) * (2 * br + 1)) - h0, 0.);
   o0 = vec4(toLin(clamp(A.rgb * clamp(1. - 4. * sh - 3. * cav, .5, 1.), 0., 1.)), A.a);
   hA = clamp(h0 * 4. + .5, 0., 1.);
@@ -424,50 +456,71 @@ const nextFrame = () => new Promise<void>((res) => {
 
 export async function bakeTextures(renderer: THREE.WebGLRenderer, size: 512 | 1024, onProgress?: (f: number) => void): Promise<Textures> {
   const t0 = performance.now();
-  const quad = new FullScreenQuad();
   const prevRT = renderer.getRenderTarget();
+  const tri = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
+  const cam = new THREE.OrthographicCamera(), scene = new THREE.Scene();
+  const raw = (fragmentShader: string, uniforms: Record<string, THREE.IUniform>, defines = {}) => {
+    const m = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader, uniforms, defines,
+      toneMapped: false, depthTest: false, depthWrite: false });
+    const mesh = new THREE.Mesh(tri, m); mesh.frustumCulled = false; scene.add(mesh);
+    return mesh;
+  };
   const scratch = new THREE.WebGLRenderTarget(size, size, { count: 2, type: THREE.HalfFloatType, format: THREE.RGBAFormat,
     minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false, generateMipmaps: false });
-  const finalMats = [false, true].map((win) => new THREE.RawShaderMaterial({
-    glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: PASS_TWO, defines: win ? { WIN: 1 } : {},
-    uniforms: { uA: { value: scratch.textures[0] }, uB: { value: scratch.textures[1] }, uRes: { value: size },
-      uDepth: { value: 1 }, uMpp: { value: new THREE.Vector2() }, uK: { value: Math.round(15 * size / 1024) },
-      uBR: { value: Math.max(1, Math.round(6 * size / 1024)) } },
-  }));
+  const pass2 = [false, true].map((win) => raw(PASS_TWO, { uA: { value: scratch.textures[0] }, uB: { value: scratch.textures[1] },
+    uRes: { value: size }, uDepth: { value: 1 }, uMpp: { value: new THREE.Vector2() }, uK: { value: Math.round(15 * size / 1024) },
+    uBR: { value: Math.max(1, Math.round(6 * size / 1024)) } }, win ? { WIN: 1 } : {}));
+  const tiles = ALL.map(([n]) => n === 'window' ? 1 : SETS[n as TexSet][0]);
+  const arr = (depth: number, format: THREE.PixelFormat) => new THREE.WebGLArrayRenderTarget(size, size, depth, {
+    type: THREE.HalfFloatType, format, depthBuffer: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, generateMipmaps: false });
+  const nzRT = arr(MAXN, THREE.RedFormat), vzRT = arr(MAXV, THREE.RGBAFormat);
+  const common = () => ({ uRes: { value: size }, uTile: { value: 1 }, uNZ: { value: nzRT.texture }, uVZ: { value: vzRT.texture } });
+  const noise = raw(NOISE_FS, { ...common(), uA: { value: new THREE.Vector4() }, uB: { value: new THREE.Vector4() } });
+  const worley = raw(WORLEY_FS, { ...common(), uW: { value: new THREE.Vector4() }, uWL: { value: new THREE.Vector2() } });
+  const pass1 = ALL.map(([, b], i) => {
+    const l = layered(b);
+    return { ...l, mesh: raw(passOne(l.body, i === ALL.length - 1), { ...common(), uTile: { value: tiles[i] } }) };
+  });
+  renderer.setRenderTarget(scratch);
+  await renderer.compileAsync(scene, cam);                        // parallel links (KHR_parallel_shader_compile)
+  onProgress?.(0.5 / ALL.length);
 
-  const bake = (body: string, tile: number, depth: number, win: boolean) => {
-    const m1 = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS,
-      fragmentShader: win ? passOne(body, WINDOW_LIB) : passOne(body),
-      uniforms: { uTile: { value: tile }, uRes: { value: size } } });
-    renderer.setRenderTarget(scratch); quad.material = m1; quad.render(renderer); m1.dispose();
+  const draw = (mesh: THREE.Mesh, rt: THREE.WebGLRenderTarget, layer = 0) => {
+    scene.children.forEach((c) => (c.visible = c === mesh));
+    renderer.setRenderTarget(rt, layer); renderer.render(scene, cam);
+  };
+  const uni = (m: THREE.Mesh) => (m.material as THREE.RawShaderMaterial).uniforms;
+  const bake = (i: number) => {
+    const win = i === ALL.length - 1, depth = win ? 1 : SETS[ALL[i][0] as TexSet][1];
+    const { nRows, vRows, mesh } = pass1[i], nu = uni(noise), wu = uni(worley);
+    nu.uTile.value = wu.uTile.value = tiles[i];
+    nRows.forEach((r, k) => { nu.uA.value.set(r[0], r[1], r[2], r[3]); nu.uB.value.set(r[4], r[5], r[6], 0); draw(noise, nzRT, k); });
+    vRows.forEach((r, k) => { wu.uW.value.set(r[0], r[1], r[2], r[3]); wu.uWL.value.set(r[4], r[5]); draw(worley, vzRT, k); });
+    draw(mesh, scratch);
     const out = new THREE.WebGLRenderTarget(size, size, { count: 2, depthBuffer: false, generateMipmaps: true,
       minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, wrapS: THREE.RepeatWrapping,
       wrapT: THREE.RepeatWrapping, anisotropy: 4 });
     out.textures[0].colorSpace = THREE.SRGBColorSpace;            // SRGB8_ALPHA8: hardware encodes on write, decodes on sample
     for (const t of out.textures) t.flipY = false;
-    const m2 = finalMats[win ? 1 : 0];
-    m2.uniforms.uDepth.value = depth;
-    m2.uniforms.uMpp.value.set(win ? 2.8 / (size / 2) : tile / size, win ? 3.2 / (size / 2) : tile / size);
-    renderer.setRenderTarget(out); quad.material = m2; quad.render(renderer);
+    const m2 = pass2[win ? 1 : 0], u = uni(m2);
+    u.uDepth.value = depth;
+    u.uMpp.value.set(win ? 2.8 / (size / 2) : tiles[i] / size, win ? 3.2 / (size / 2) : tiles[i] / size);
+    draw(m2, out);
     return out;
   };
 
-  const names = Object.keys(SETS) as TexSet[], total = names.length + 1;
   const sets = {} as Record<TexSet, TexPair>;
   let last!: THREE.WebGLRenderTarget;
-  for (let i = 0; i < names.length; i++) {
-    const [tile, depth] = SETS[names[i]];
-    last = bake(BODIES[names[i]], tile, depth, false);
-    sets[names[i]] = { bc: last.textures[0], nr: last.textures[1], tile };
-    onProgress?.((i + 1) / total);
-    await nextFrame();
+  for (let i = 0; i < ALL.length; i++) {
+    last = bake(i);
+    if (i < ALL.length - 1) sets[ALL[i][0] as TexSet] = { bc: last.textures[0], nr: last.textures[1], tile: tiles[i] };
+    onProgress?.((i + 1) / ALL.length);
+    if (i < ALL.length - 1) await nextFrame();
   }
-  last = bake(WINDOW_BODY, 1, 1, true);
-  const windowTex = { bc: last.textures[0], nr: last.textures[1] };
   renderer.readRenderTargetPixels(last, 0, 0, 1, 1, new Uint8Array(4), undefined, 1);   // sync: wait for the GPU
   renderer.setRenderTarget(prevRT);
-  scratch.dispose(); finalMats.forEach((m) => m.dispose()); quad.dispose();
-  onProgress?.(1);
-  console.log(`[textures] baked ${total} sets at ${size}² in ${(performance.now() - t0).toFixed(0)} ms`);
-  return { sets, window: windowTex };
+  scratch.dispose(); nzRT.dispose(); vzRT.dispose(); tri.dispose();
+  scene.children.forEach((c) => ((c as THREE.Mesh).material as THREE.Material).dispose());
+  console.log(`[textures] baked ${ALL.length} sets at ${size}² in ${(performance.now() - t0).toFixed(0)} ms`);
+  return { sets, window: { bc: last.textures[0], nr: last.textures[1] } };
 }

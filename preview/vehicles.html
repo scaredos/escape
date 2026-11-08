@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Vehicles</title></head><body><script type="module">
+import * as THREE from 'three';
+import { stage, params } from './_stage.ts';
+import { buildVehicle, VEHICLE_SPECS } from '../src/render/vehicles/index.ts';
+import { buildCharacter, lookFromRoster } from '../src/render/characters/index.ts';
+import { triCount } from '../src/render/vehicles/kit.ts';
+const { r, scene, cam } = stage(30);
+const models = ['sedan', 'taxi', 'van', 'pickup', 'hunter_jeep', 'hunter_tank', 'hunter_heli'];
+const gap = { sedan: 0, taxi: 3.2, van: 3.4, pickup: 3.4, hunter_jeep: 3.3, hunter_tank: 4.6, hunter_heli: 8.5 };
+let z = 0; const tris = {};
+for (const m of models) {
+  z += gap[m];
+  const v = buildVehicle(m);
+  v.root.position.set(0, 0, z);
+  scene.add(v.root);
+  tris[m] = triCount(v.root);
+  if (v.wheels.length === 4) { v.wheels[0].rotation.y = 0.35; v.wheels[1].rotation.y = 0.35; for (const w of v.wheels) w.rotation.z = -0.6; }
+  if (v.rotors) { v.rotors.main.rotation.y = 0.3; v.rotors.tail.rotation.z = 0.5; v.setRotorBlur(params.get('blur') ? 1 : 0.4); }
+  if (v.turret) { v.turret.rotation.y = 0.35; v.barrel.rotation.z = 0.08; }
+  if (m === 'sedan' || m === 'hunter_jeep' || m === 'pickup') {
+    const c = buildCharacter(lookFromRoster(m === 'hunter_jeep' ? 'soldier_rifleman' : 'fugitive_driver'));
+    const seat = VEHICLE_SPECS[m].seat;
+    c.root.position.set(seat[0], seat[2] - 0.45, -seat[1]);
+    v.root.add(c.root);
+    for (let i = 0; i < 30; i++) c.update(1 / 60, { state: 'seated', speed: 0, held: 'none' });
+  }
+  if (m === 'sedan') v.setPaint(params.get('paint') ?? VEHICLE_SPECS.sedan.paints[0]);
+}
+console.log('TRIS', JSON.stringify(tris));
+const close = params.get('close');
+if (close === 'seat') { cam.position.set(0.9, 1.55, -3.0); cam.lookAt(-0.1, 1.0, -0.3); }
+else if (close === 'side') { cam.position.set(-0.4, 1.3, 3.3); cam.lookAt(-0.1, 1.05, 0); }
+else { cam.fov = 38; cam.updateProjectionMatrix(); cam.position.set(25, 12, z / 2 + 18); cam.lookAt(0, 1.0, z / 2 + 2.5); }
+r.render(scene, cam);
+window.__ready = true;
+</script></body></html>

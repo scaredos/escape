@@ -97,6 +97,10 @@ updateWater(12.3);
 const persp = (pos, at, fov = 60) => { const c = new THREE.PerspectiveCamera(fov, 1, 0.1, 3000); c.position.set(...pos); c.lookAt(...at); return c; };
 const tilesCam = new THREE.OrthographicCamera(-24, 24, 15, -15, 1, 200);
 tilesCam.position.set(150, 60, 0.5); tilesCam.up.set(0, 0, -1); tilesCam.lookAt(150, 0, 0.5);
+if (q.has('zoom')) {                                             // ?view=tiles&zoom=<set index>: one tile fills the frame
+  const i = +q.get('zoom'), x = 150 + (i % 4 - 1.5) * 9.5, z = (Math.floor(i / 4) - 1) * 10.5;
+  tilesCam.top = 2.2; tilesCam.bottom = -2.2; tilesCam.position.set(x, 60, z); tilesCam.lookAt(x, 0, z);
+}
 const cams = {
   tiles: tilesCam,
   street: persp([-46, 1.7, 2.2], [0, 5, -4]),

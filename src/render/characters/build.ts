@@ -19,7 +19,7 @@ export const ARM0 = 8 * Math.PI / 180;
 const K = 0.8; // code-built tubes ≈ 0.8 × the Skin-modifier radii (06 §7.2)
 
 export interface Detail { radial: number; sw: number; sh: number; small: [number, number] }
-export const HI: Detail = { radial: 14, sw: 18, sh: 12, small: [8, 6] };
+export const HI: Detail = { radial: 12, sw: 14, sh: 10, small: [8, 6] };
 export const LO: Detail = { radial: 7, sw: 9, sh: 6, small: [5, 4] };
 
 const toThree = (p: Vec3) => new THREE.Vector3(p[0], p[2], -p[1]);
@@ -135,7 +135,7 @@ export function buildBody(L: Look, D: Detail): BodyParts {
     add(`foot_${side}`, ellip(A, [rA, rA, rA], undefined, D.sw, D.sh), legCol(0.07), L.shorts ? SKIN : 0.75);
     const h = L.bootH;
     add(`foot_${side}`, cube([0.055 * s, sy * 0.10 * hw * s, h / 2 * s], [0.255 * s, 0.105 * s, h * s], 0.018 * s), L.shoes, 0.6);
-    if (L.kneepads) add(`calf_${side}`, cube([0.06 * g * s + 0.02 * s, sy * 0.10 * hw * s, 0.50 * s], [0.035 * s, 0.075 * s, 0.085 * s], 0.01 * s), FACTION.vest, 0.9);
+    if (L.kneepads) add(`calf_${side}`, cube([0.06 * g * s, sy * 0.10 * hw * s, 0.50 * s], [0.035 * s, 0.075 * s, 0.085 * s], 0.01 * s), FACTION.vest, 0.9);
   }
 
   // ---- head (offsets × s·hk, char_build's "front y" = +x here)
@@ -184,7 +184,7 @@ export function buildBody(L: Look, D: Detail): BodyParts {
     add('spine_03', cube([0, 0, 1.235 * s], [0.255 * g * s, 0.37 * sw * g * s, 0.31 * s], 0.03 * s), FACTION.vest, 0.9);
     for (const py of [-0.09, 0, 0.09]) add('spine_03', cube([0.135 * g * s, py * sw * s, 1.15 * s], [0.04 * s, 0.07 * s, 0.085 * s], 0.008 * s), FACTION.vest, 0.9);
   }
-  if (L.belt) add('pelvis', cyl([0, 0, 0.985 * s], 1, 0.045 * s, 'Z', 20).applyMatrix4(new THREE.Matrix4().makeScale(0.118 * g, 0.165 * hw * g, 1).setPosition(0, 0, 0.985 * s * 0)), '2A2620', 0.6);
+  if (L.belt) add('pelvis', cyl([0, 0, 0.985 * s], 1, 0.045 * s, 'Z', 20).applyMatrix4(new THREE.Matrix4().makeScale(0.118 * g * s, 0.165 * hw * g * s, 1)), '2A2620', 0.6);
   if (L.backpack) add('spine_03', cube([-(0.15 * g + 0.03) * s, 0, 1.25 * s], [0.13 * s, 0.27 * s, 0.34 * s], 0.025 * s), L.backpack, 0.85);
   if (L.patch) {
     const S = J.upperarm_l, E = J.lowerarm_l, n: Vec3 = [0, Math.cos(ARM0), Math.sin(ARM0)];
@@ -219,13 +219,13 @@ export function weapon(h: Exclude<Held, 'none'>): Weapon {
       .add(cube([0.30, 0, 0.045], [0.22, 0.055, 0.06]), C, 0.5).add(cube([-0.25, 0, 0.02], [0.24, 0.04, 0.09]), C, 0.5)
       .add(cube([0.10, 0, -0.05], [0.05, 0.03, 0.12], 0, rotY(-10)), C, 0.5).add(cube([0, 0, -0.035], [0.035, 0.03, 0.08], 0, rotY(15)), C, 0.5)
       .add(cube([0.05, 0, 0.095], [0.08, 0.02, 0.03]), C, 0.5);
-    muzzle = [0.54, 0, 0.05]; support = [0.30, 0, 0.0];
+    muzzle = [0.54, 0, 0.05]; support = [0.25, 0, 0.0];
   } else {
     const C = '2B2B2B', W = '6B4A2E';
     b.add(cube([0.03, 0, 0.03], [0.2, 0.045, 0.07]), C, 0.5).add(cyl([0.405, 0, 0.05], 0.015, 0.55, 'X', 8), C, 0.5)
       .add(cyl([0.36, 0, 0.022], 0.012, 0.45, 'X', 6), C, 0.5).add(cube([0.38, 0, 0.02], [0.17, 0.045, 0.045]), W, 0.7)
       .add(cube([-0.22, 0, 0.01], [0.30, 0.04, 0.10], 0, rotY(-5)), W, 0.7).add(cube([-0.03, 0, -0.03], [0.04, 0.03, 0.08], 0, rotY(15)), W, 0.7);
-    muzzle = [0.68, 0, 0.05]; support = [0.38, 0, 0.0];
+    muzzle = [0.68, 0, 0.05]; support = [0.33, 0, 0.0];
   }
   w = { geo: b.build(40), muzzle: toThree(muzzle), support: toThree(support) };
   weapons.set(h, w);
