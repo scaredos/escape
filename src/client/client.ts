@@ -15,6 +15,7 @@ import { EntityView, toThree } from '../render/entities';
 import { Fx } from '../render/fx';
 import type { HudView, HudFocus } from '../ui/hud-types';
 import { Input, KEY_NAMES } from './input';
+import { RoadblockView } from '../render/roadblocks';
 
 interface Snap { ht: number; recs: Map<number, EntRec> }
 const DEG = Math.PI / 180;
@@ -39,7 +40,7 @@ export class Client {
   hurtFlash = 0; damageNumbers: HudView['damageNumbers'] = [];
   spread = new Spread(); private lastShot = -10; private shotSeq = 0; private localMag: number[] = [];
   drive: [number, number] | null = null;   // EscDrive override
-  entities: EntityView; fx: Fx;
+  entities: EntityView; fx: Fx; roadblocks: RoadblockView;
   input: Input;
   sens = 0.1; fovFoot = 80; private respawnSeenAt = 0;
   onEndCard: () => void = () => {};
@@ -47,6 +48,7 @@ export class Client {
   constructor(public link: ClientLink, public phys: Phys, public wq: WorldQ, public stage: Stage, public isHost: boolean) {
     this.entities = new EntityView(stage.scene, phys);
     this.fx = new Fx(stage.scene);
+    this.roadblocks = new RoadblockView(stage.scene);
     this.input = new Input(stage.canvas);
     link.onMessage = (m) => this.onMessage(m);
   }
@@ -64,6 +66,7 @@ export class Client {
         this.playerId = m.playerId; this.myName = m.name; this.welcomed = true; this.offset = m.hostTime - this.realNow();
         this.players = m.players; this.director = m.director;
         for (const s of m.spots) this.spots.set(s.id, s);
+        this.roadblocks.set(m.roadblocks, this.isHost);
         break;
       case 'snap': {
         this.director = m.d; this.players = m.players;
@@ -81,6 +84,8 @@ export class Client {
       }
       case 'spots': for (const s of m.s) { if (s.mode === 'gone') this.spots.delete(s.id); else this.spots.set(s.id, s); } break;
       case 'msg': this.addFeed(m.text); break;
+      case 'roadblocks': this.roadblocks.set(m.r, this.isHost); break;
+      case 'tankFire': this.fx.shot(toThree(m.pos[0], m.pos[1], m.pos[2]), [], this.realNow()); break;
       case 'launch': this.launched.add(m.id); this.entities.launch(m.id, m.v); break;
       case 'shotFx': this.fx.shot(toThree(m.origin[0], m.origin[1], m.origin[2]), m.ends.map((e) => toThree(e[0], e[1], e[2])), this.realNow()); break;
       case 'hitConfirm': for (const h of m.hits) this.damageNumbers.push({ x: h.point[0], y: h.point[1], z: h.point[2], dmg: h.dmg, head: h.head, t: this.realNow() }); break;

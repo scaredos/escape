@@ -220,6 +220,7 @@ export class Sim {
   /** Kill outright (self-destruct style: no kill heat when `by` is null). */
   kill(t: Char, by: Char | null, weapon: WeaponType | '' = '', launch?: number[]) {
     if (t.dead) return;
+    if (isHuman(t) && this.dir.god.has(t.player.id) && (launch || by)) return; // God: immune to tank blasts and crushes
     t.dead = true; t.hp = 0; t.deadAt = this.now;
     if (launch) { t.launched = true; this.launch(t, launch); }
     else if (!t.launched) {

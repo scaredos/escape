@@ -4,7 +4,7 @@ import type { GenOutput } from '../world/types';
 import { BOX, PROP } from '../world/types';
 import type { Textures, TexSet } from './textures';
 import { facadeMaterial, texturedMaterial, waterMaterial } from './materials';
-import { buildProp, type PropName } from './props/index';
+import { buildProp, buildPropLOD, type PropName } from './props/index';
 import { buildVehicle } from './vehicles/index';
 import { vertexColorMaterial } from './geo';
 
@@ -25,13 +25,17 @@ export function propMatrix(a: ArrayLike<number>, o: number, out = _m): THREE.Mat
   return out.compose(_p, _q, _s);
 }
 
-interface Chunk { obj: THREE.Object3D; cx: number; cy: number; r: number; cull: number }
+interface Chunk { obj: THREE.Object3D; cx: number; cy: number; r: number; cull: number; lod?: THREE.Object3D; lodDist?: number }
 
 const CHUNK: Record<string, [number, number]> = { // layer -> [chunk size, cull distance]
   lot: [2000, 1e9], jstone: [2000, 1e9], sand: [2000, 1e9], fields: [2000, 1e9], beige: [2000, 1e9], desert: [2000, 1e9],
   village: [2000, 1e9], seabed: [4000, 1e9], mesa: [2000, 1e9], facade: [1000, 3200], asphalt: [1000, 1500], paving: [1000, 900],
   apron: [1000, 2000], lawn: [1000, 900], pier: [1000, 1500], facade_nc: [500, 1000],
 };
+/** Distance (m, chunk centre) beyond which a prop chunk switches to the low-poly version. */
+const PROP_LOD: Record<string, number> = { Shrub: 70, 'Rock:small': 60, Rock: 90, Acacia: 120, Palm: 130, Ficus: 120, StreetLamp: 150,
+  SolarHeater: 90, WaterTank: 90, ACUnit: 60, ContainerRed: 220, ContainerBlue: 220, ContainerGreen: 220, ContainerGrey: 220, PortCrane: 400,
+  Bench: 80, Bin: 80, Umbrella: 100, Lounger: 80, BusStop: 120, Kiosk: 150, LifeguardTower: 150, Boat: 300 };
 const PROP_CULL: Record<string, number> = { Shrub: 500, 'Rock:small': 350, Rock: 700, Acacia: 800, Palm: 900, Ficus: 800,
   ContainerRed: 1500, ContainerBlue: 1500, ContainerGreen: 1500, ContainerGrey: 1500, PortCrane: 1e9, 'Hill:desert': 1e9,
   'Hill:fields': 1e9, 'Hill:beige': 1e9, StreetLamp: 700, SolarHeater: 700, WaterTank: 700, ACUnit: 350, Boat: 2000 };
@@ -45,7 +49,7 @@ export class WorldView {
     this.flatMat = flatInstancedMaterial();
     const unit = new THREE.BoxGeometry(1, 1, 1), cyl = new THREE.CylinderGeometry(0.5, 0.5, 1, 14);
     for (const def of gen.layers) {
-      const data = gen.boxes[def.key]; if (!data?.length) continue;
+      const data = gen.boxes[def.key]; if (!data?.length || def.key === 'seabed') continue; // seabed: collider only, the opaque sea hides it
       let mat: THREE.Material, geo: THREE.BufferGeometry = unit;
       if (def.kind === 'facade') mat = facadeMaterial(tex);
       else if (def.kind === 'textured') mat = texturedMaterial(tex, def.set as TexSet, def.tint ?? [1, 1, 1], def.tile ?? 4, def.rough ? { roughMul: def.rough / 0.5 } : undefined);
@@ -104,20 +108,25 @@ export class WorldView {
       const sub = name.split(':')[1];
       mat = sub === 'fields' ? texturedMaterial(this.tex, 'grass', [1, 1, 1], 6) : sub === 'beige' ? texturedMaterial(this.tex, 'grass', [1, 0.88, 0.68], 6) : texturedMaterial(this.tex, 'desert', [1, 1, 1], 8);
     } else if (base === 'Rock') mat = texturedMaterial(this.tex, 'desert', [0.95, 0.9, 0.84], 4);
-    const cull = PROP_CULL[name] ?? 600, size = cull > 5000 ? 2000 : 500;
+    const cull = PROP_CULL[name] ?? 600, lodDist = base === 'Hill' ? 0 : PROP_LOD[base] ?? 100;
+    const size = cull > 5000 ? 2000 : lodDist && lodDist <= 150 ? 200 : 500;   // small chunks so the detail ring stays tight
     const buckets = new Map<string, number[]>();
     for (let o = 0; o < data.length; o += PROP) {
       const k = Math.floor(data[o] / size) + ',' + Math.floor(data[o + 1] / size);
       let b = buckets.get(k); if (!b) buckets.set(k, (b = [])); b.push(o);
     }
     const small = ['Shrub', 'Rock:small', 'ACUnit', 'SolarHeater', 'WaterTank', 'Lounger'].includes(name);
+    const lodGeo = lodDist ? buildPropLOD(base as PropName) : null;
     for (const [k, list] of buckets) {
       const [i, j] = k.split(',').map(Number);
-      const mesh = new THREE.InstancedMesh(def.geometry, mat, list.length);
-      list.forEach((o, idx) => mesh.setMatrixAt(idx, propMatrix(data, o)));
-      mesh.castShadow = !small && base !== 'Hill'; mesh.receiveShadow = true; mesh.name = name;
-      mesh.computeBoundingSphere();
-      this.add(mesh, (i + 0.5) * size, (j + 0.5) * size, size * 0.75, cull);
+      const make = (geo: THREE.BufferGeometry) => {
+        const mesh = new THREE.InstancedMesh(geo, mat, list.length);
+        list.forEach((o, idx) => mesh.setMatrixAt(idx, propMatrix(data, o)));
+        mesh.receiveShadow = true; mesh.name = name; mesh.computeBoundingSphere(); return mesh;
+      };
+      const mesh = make(def.geometry); mesh.castShadow = !small && base !== 'Hill';
+      const lod = lodGeo ? make(lodGeo) : undefined; if (lod) { lod.castShadow = false; this.group.add(lod); }
+      this.add(mesh, (i + 0.5) * size, (j + 0.5) * size, size * 0.71, cull, lod, lodDist);
     }
   }
 
@@ -145,12 +154,16 @@ export class WorldView {
     }
   }
 
-  private add(obj: THREE.Object3D, cx: number, cy: number, r: number, cull: number) {
-    this.group.add(obj); this.chunks.push({ obj, cx, cy, r, cull });
+  private add(obj: THREE.Object3D, cx: number, cy: number, r: number, cull: number, lod?: THREE.Object3D, lodDist?: number) {
+    this.group.add(obj); this.chunks.push({ obj, cx, cy, r, cull, lod, lodDist });
   }
   /** Distance culling around the camera (map coords). */
   update(camX: number, camY: number) {
-    for (const c of this.chunks) c.obj.visible = Math.hypot(c.cx - camX, c.cy - camY) - c.r < c.cull;
+    for (const c of this.chunks) {
+      const d = Math.hypot(c.cx - camX, c.cy - camY) - c.r, vis = d < c.cull;
+      if (c.lod) { const near = d < c.lodDist!; c.obj.visible = vis && near; c.lod.visible = vis && !near; }
+      else c.obj.visible = vis;
+    }
   }
 }
 

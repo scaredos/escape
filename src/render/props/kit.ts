@@ -214,3 +214,7 @@ export class Prop {
     return { geometry: gb.build(), colliders: this.colliders, size: [r2(s.x), r2(s.y), r2(s.z)] };
   }
 }
+
+/** Remove faces by index (LOD helpers: box faces are 0 -z, 1 +z, 2 -y, 3 +x, 4 +y, 5 -x; bar ends are 0/1;
+ *  cylinder caps are faces segs (top) and segs + 1 (bottom)). */
+export function drop(m: Mesh, faces: number[]): Mesh { m.f = m.f.filter((_, i) => !faces.includes(i)); return m; }

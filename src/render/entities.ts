@@ -12,7 +12,7 @@ export const toThree = (x: number, y: number, z: number, out = new THREE.Vector3
 
 interface CharEnt { kind: 'char'; vis: CharacterVisual; lod: THREE.Mesh | null; root: THREE.Group; rag: RAPIER.RigidBody | null; lastPos: THREE.Vector3; type: number; look: number }
 interface CarEnt { kind: 'car'; vis: VehicleVisual; driver: CharacterVisual | null; npc: number; spin: number; model: VehicleModel }
-interface OtherEnt { kind: 'other'; obj: THREE.Object3D; vis?: VehicleVisual }
+interface OtherEnt { kind: 'other'; obj: THREE.Object3D; vis?: VehicleVisual; extra?: THREE.Object3D[] }
 type Ent = CharEnt | CarEnt | OtherEnt;
 
 export class EntityView {
@@ -50,7 +50,23 @@ export class EntityView {
       this.group.add(vis.root);
       return { kind: 'car', vis, driver: null, npc: 0, spin: 0, model };
     }
-    const obj = new THREE.Group(); this.group.add(obj);
+    if (t === T.HELI || t === T.TANK) {
+      const vis = buildVehicle(t === T.HELI ? 'hunter_heli' : 'hunter_tank');
+      vis.root.traverse((o) => { o.castShadow = true; });
+      const obj = new THREE.Group(); obj.add(vis.root); this.group.add(obj);
+      if (t === T.HELI) {
+        const spot = new THREE.SpotLight(new THREE.Color().setRGB(1, 0.96, 0.85, THREE.LinearSRGBColorSpace), 400, 120, 9 * Math.PI / 180, 0.55, 1);
+        spot.castShadow = false; spot.name = 'spot'; this.group.add(spot, spot.target);
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff5d9, transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+        cone.name = 'cone'; this.group.add(cone);
+        const disc = new THREE.Mesh(new THREE.CircleGeometry(6, 32), new THREE.MeshBasicMaterial({ color: 0xfff5d9, transparent: true, opacity: 0.25, depthWrite: false }));
+        disc.rotation.x = -Math.PI / 2; disc.name = 'disc'; this.group.add(disc);
+        return { kind: 'other', obj, vis, extra: [spot, cone, disc] } as any;
+      }
+      return { kind: 'other', obj, vis };
+    }
+    const obj = t === T.SHELL ? new THREE.Mesh(new THREE.SphereGeometry(0.25, 10, 8), new THREE.MeshStandardMaterial({ color: 0x3a3a3a })) : new THREE.Group();
+    this.group.add(obj);
     return { kind: 'other', obj };
   }
   private updChar(e: CharEnt, r: EntRec, dt: number, cam: THREE.Vector3) {
@@ -106,7 +122,24 @@ export class EntityView {
       }
     }
   }
-  private updOther(e: OtherEnt, r: EntRec, _dt: number) { toThree(r[E.x], r[E.y], r[E.z], e.obj.position); e.obj.rotation.y = r[E.yaw]; }
+  private updOther(e: OtherEnt, r: EntRec, dt: number) {
+    toThree(r[E.x], r[E.y], r[E.z], e.obj.position); e.obj.rotation.y = r[E.yaw];
+    const ex = (e as any).extra as THREE.Object3D[] | undefined;
+    if (r[E.t] === T.HELI && e.vis) {
+      e.obj.rotation.set(-12 * Math.PI / 180, r[E.yaw], -8 * Math.PI / 180, 'YXZ');
+      const rot = (e.vis as any).rotors; if (rot) { rot.main.rotation.y += 1400 * Math.PI / 180 * dt; rot.tail.rotation.z += 1.7 * 1400 * Math.PI / 180 * dt; }
+      (e.vis as any).setRotorBlur?.(1);
+      if (ex) {
+        const [spot, cone, disc] = ex as [THREE.SpotLight, THREE.Mesh, THREE.Mesh];
+        const lx = r[E.x] + Math.cos(r[E.yaw]) * 4.3, ly = r[E.y] + Math.sin(r[E.yaw]) * 4.3, lz = r[E.z] + 0.5, ax = r[E.x0], ay = r[E.x0 + 1];
+        spot.position.set(lx, lz, -ly); spot.target.position.set(ax, 0, -ay); spot.target.updateMatrixWorld();
+        const from = new THREE.Vector3(lx, lz, -ly), to = new THREE.Vector3(ax, 0.05, -ay), L = from.distanceTo(to);
+        cone.position.copy(from).lerp(to, 0.5); cone.scale.set(6, L, 6); cone.lookAt(to); cone.rotateX(Math.PI / 2);
+        disc.position.set(ax, 0.08, -ay);
+      }
+    }
+    if (r[E.t] === T.TANK && e.vis) { const tu = (e.vis as any).turret; if (tu) tu.rotation.y = r[E.x0]; }
+  }
 
   /** Ragdoll launch (spec 03 §9): cosmetic, simulated locally from the broadcast velocity. */
   launch(id: number, v: number[]) {
@@ -122,7 +155,7 @@ export class EntityView {
   private dispose(e: Ent) {
     if (e.kind === 'char') { if (e.rag) this.phys.world.removeRigidBody(e.rag); e.root.removeFromParent(); e.vis.dispose(); }
     else if (e.kind === 'car') e.vis.root.removeFromParent();
-    else e.obj.removeFromParent();
+    else { e.obj.removeFromParent(); for (const o of ((e as any).extra ?? []) as THREE.Object3D[]) { o.removeFromParent(); if ((o as any).target) (o as any).target.removeFromParent(); } }
   }
   charVisual(id: number): CharacterVisual | null { const e = this.ents.get(id); return e && e.kind === 'char' ? e.vis : null; }
   ragdollPos(id: number): THREE.Vector3 | null { const e = this.ents.get(id); return e && e.kind === 'char' && e.rag ? e.root.position : null; }

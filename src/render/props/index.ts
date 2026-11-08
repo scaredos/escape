@@ -1,7 +1,9 @@
 // All 39 props of spec 06 §9, built in code from the recipes in kit/reference/blender/props.py.
 // Geometry is authored in the source frame (x forward, y left, z up) and converted to three.js axes by GeoBuilder;
 // colliders and `size` stay in the source frame.
+import type * as THREE from 'three';
 import { Prop, rng, type PropDef } from './kit';
+import { LOD_BUILDERS } from './lod';
 import * as S from './street';
 import * as Vn from './venue';
 import * as N from './nature';
@@ -36,4 +38,17 @@ export function buildProp(name: PropName): PropDef {
     cache.set(name, d);
   }
   return d;
+}
+
+const lodCache = new Map<PropName, THREE.BufferGeometry>();
+/** Far-distance version: same pivot, frame, silhouette, size and part colours/roughness (`color` + `rough` attributes),
+ *  about 10-15 % of the full triangle count. Hill returns its full geometry (already cheap). Cached. */
+export function buildPropLOD(name: PropName): THREE.BufferGeometry {
+  let g = lodCache.get(name);
+  if (!g) {
+    const lod = LOD_BUILDERS[name];
+    if (lod) { const P = new Prop(rng(name)); lod(P); g = P.finish().geometry; } else g = buildProp(name).geometry;
+    lodCache.set(name, g);
+  }
+  return g;
 }

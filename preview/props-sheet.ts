@@ -1,9 +1,9 @@
 // Contact sheet of the procedural props (spec 06 §9): one framed 3/4 orthographic view per prop, like kit/screenshots/props_sheet*.jpg.
 import * as THREE from 'three';
 import { vertexColorMaterial } from '../src/render/geo';
-import { buildProp, PROP_NAMES } from '../src/render/props/index';
+import { buildProp, buildPropLOD, PROP_NAMES } from '../src/render/props/index';
 
-const page = Number(document.body.dataset.page ?? '1'), PER = 20, COLS = 5;
+const page = Number(document.body.dataset.page ?? '1'), PER = 20, COLS = 5, LOD = new URLSearchParams(location.search).has('lod');
 const names = PROP_NAMES.slice((page - 1) * PER, page * PER);
 const rows = Math.ceil(names.length / COLS);
 const W = innerWidth, H = innerHeight, cw = Math.floor(W / COLS), ch = Math.floor(H / rows), strip = 22;
@@ -30,7 +30,8 @@ const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 2000);
 const mesh = new THREE.Mesh(undefined, vertexColorMaterial()); mesh.castShadow = mesh.receiveShadow = true; scene.add(mesh);
 
 names.forEach((name, i) => {
-  const d = buildProp(name), g = d.geometry;
+  const d = buildProp(name), g = LOD ? buildPropLOD(name) : d.geometry;
+  if (LOD) g.computeBoundingBox();
   mesh.geometry = g;
   const bb = g.boundingBox!, c = bb.getCenter(new THREE.Vector3()), size = bb.getSize(new THREE.Vector3()), rad = size.length() / 2;
   ground.scale.setScalar(rad * 20); ground.position.set(c.x, Math.min(0, bb.min.y), c.z);
@@ -49,7 +50,7 @@ names.forEach((name, i) => {
   renderer.setViewport(x, y, cw - 1, ch - 1); renderer.setScissor(x, y, cw - 1, ch - 1);
   renderer.render(scene, cam);
   const label = document.createElement('div');
-  label.textContent = `${name}  ${d.size[2].toFixed(1)} m  ${g.attributes.position.count / 3} tris`;
+  label.textContent = `${name}${LOD ? ' LOD' : ''}  ${d.size[2].toFixed(1)} m  ${g.attributes.position.count / 3} tris`;
   Object.assign(label.style, { position: 'absolute', left: `${x}px`, top: `${(row + 1) * ch - strip}px`, width: `${cw}px`, textAlign: 'center',
     font: '12px sans-serif', color: '#222' });
   document.body.appendChild(label);
