@@ -1,0 +1,119 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Textures preview</title>
+<style>body{margin:0;background:#000;overflow:hidden}#info{position:fixed;left:8px;top:6px;font:12px monospace;color:#fff;text-shadow:0 0 3px #000}</style>
+</head><body><div id="info">baking…</div><script type="module">
+// Spec 06 §4/§5 check: one flat tile per texture set (2×2 repeats each, like kit/screenshots/textures_sheet.jpg),
+// plus a street: facade boxes (plaster + limestone, 2 and 10 storeys, parapets), asphalt road, paving, lot, sea.
+// ?view=grid (default, 4 viewports) | tiles | street | aerial | close   ?size=512|1024
+import * as THREE from 'three';
+import { bakeTextures } from '../src/render/textures.ts';
+import { texturedMaterial, facadeMaterial, waterMaterial, updateWater } from '../src/render/materials.ts';
+
+const q = new URLSearchParams(location.search), view = q.get('view') || 'grid', size = +(q.get('size') || 512);
+const r = new THREE.WebGLRenderer({ antialias: true });
+r.setPixelRatio(1); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.8;
+r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFShadowMap;
+
+const t0 = performance.now();
+const tex = await bakeTextures(r, size, (f) => { document.getElementById('info').textContent = `baking ${(f * 100) | 0}%`; });
+const bakeMs = performance.now() - t0;
+
+const s = new THREE.Scene(); s.background = new THREE.Color(0x8db8e0); s.fog = new THREE.FogExp2(0xd9d2c4, 0.00045);
+s.add(new THREE.HemisphereLight(0xbfd4ea, 0xc8b394, 1));
+const sun = new THREE.DirectionalLight(new THREE.Color().setRGB(1, 0.93, 0.82), 3);
+const az = 215 * Math.PI / 180, el = 50 * Math.PI / 180;      // sun bearing 215° (SW), elevation 50°; north = -z
+sun.position.set(Math.cos(el) * Math.sin(az), Math.sin(el), -Math.cos(el) * Math.cos(az)).multiplyScalar(150);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 400 });
+sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02;
+s.add(sun, sun.target);
+
+const unit = new THREE.BoxGeometry(1, 1, 1);
+const M = (x, y, z, L, h, W, yawDeg = 0) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z),
+  new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawDeg * Math.PI / 180), new THREE.Vector3(L, h, W));
+function instanced(mat, ms) {
+  const m = new THREE.InstancedMesh(unit, mat, ms.length); ms.forEach((x, i) => m.setMatrixAt(i, x));
+  m.receiveShadow = true; s.add(m); return m;
+}
+
+// ---- texture sheet: 4 x 3 tiles of 8 m at x≈150, each showing 2 x 2 repeats, labelled
+const names = ['plaster', 'stone', 'asphalt', 'paving', 'roof', 'sand', 'desert', 'grass', 'lot', 'tiles', 'water'];
+function label(text, x, z) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 64;
+  const g = c.getContext('2d'); g.fillStyle = '#222'; g.fillRect(0, 0, 512, 64); g.fillStyle = '#fff'; g.font = 'bold 40px sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 34);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(8, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), toneMapped: false }));
+  m.rotation.x = -Math.PI / 2; m.position.set(x, 0.01, z); s.add(m);
+}
+names.forEach((n, i) => {
+  const x = 150 + (i % 4 - 1.5) * 9.5, z = (Math.floor(i / 4) - 1) * 10.5;
+  const m = new THREE.Mesh(unit, texturedMaterial(tex, n, 0xffffff, 4)); m.matrixAutoUpdate = false;
+  m.matrix.copy(M(x, -0.05, z, 8, 0.1, 8)); s.add(m);
+  label(`${n} (${tex.sets[n].tile} m)`, x, z + 4.6);
+});
+{
+  const x = 150 + 1.5 * 9.5, z = 10.5;
+  const g = new THREE.PlaneGeometry(8, 8), uv = g.attributes.uv;            // flipY=false atlas: row 0 is the top
+  for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i));
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex.window.bc, toneMapped: false }));
+  m.rotation.x = -Math.PI / 2; m.position.set(x, 0.001, z); s.add(m); label('window atlas', x, z + 4.6);
+}
+
+// ---- street (x east, z south): road along x, north side z < 0
+const lot = new THREE.Mesh(unit, texturedMaterial(tex, 'lot', 0xffffff, 6)); lot.matrixAutoUpdate = false;
+lot.matrix.copy(M(5, -0.1, 0, 110, 0.2, 90)); lot.receiveShadow = true; s.add(lot);              // plain Mesh path
+instanced(texturedMaterial(tex, 'asphalt', 0xffffff, 6), [M(5, 0.02 - 0.05, 0, 110, 0.14, 8)]);    // top 0.04
+instanced(texturedMaterial(tex, 'paving', 0xffffff, 2), [M(5, 0.02 - 0.05, -5.5, 110, 0.14, 3), M(5, 0.02 - 0.05, 5.5, 110, 0.14, 3)]);
+const sea = new THREE.Mesh(unit, waterMaterial(tex)); sea.matrixAutoUpdate = false;
+sea.matrix.copy(M(-100, -0.2, 0, 90, 0.1, 160)); sea.receiveShadow = true; s.add(sea);
+const bed = new THREE.Mesh(unit, texturedMaterial(tex, 'sand', [0.7, 0.66, 0.58], 4)); bed.matrixAutoUpdate = false;
+bed.matrix.copy(M(-100, -0.75, 0, 90, 0.1, 160)); s.add(bed);
+instanced(texturedMaterial(tex, 'sand', 0xffffff, 4), [M(-52.5, -0.15, 0, 5, 0.3, 160)]);             // beach strip
+
+// buildings: [x0, x1, side(-1 north / +1 south), W, levels, tintHex, stone, yaw, parapet]
+const B = [
+  [-44, -30, -1, 10, 4, 0xf2efe6, 0], [-28, -18, -1, 9, 2, 0xebd3c8, 0], [-16, 0, -1, 12, 10, 0xede8da, 0],
+  [2, 14, -1, 10, 4, 0xcfc1a0, 1], [16, 25, -1, 9, 3, 0xc9b48a, 1, 0, 1], [27, 42, -1, 11, 5, 0xefe3b0, 0],
+  [-40, -22, 1, 10, 5, 0xefe3b0, 0], [-20, -9, 1, 10, 3, 0xd8c9a6, 1], [-7, 5, 1, 10, 4, 0xd9c7a3, 0, 12],
+  [8, 22, 1, 10, 3, 0xf5f1ea, 0, 0, 1], [24, 40, 1, 12, 6, 0xbfae8c, 1],
+];
+const fm = [], tints = [], stones = [];
+const add = (m, tint, st) => { fm.push(m); tints.push(tint.r, tint.g, tint.b); stones.push(st); };
+for (const [x0, x1, side, W, lv, hex, st, yaw = 0, par = 0] of B) {
+  const L = x1 - x0, H = lv * 3.2, xc = (x0 + x1) / 2, zc = side * (7.5 + W / 2), tint = new THREE.Color(hex);
+  add(M(xc, H / 2, zc, L, H, W, yaw), tint, st);
+  if (par) {                                                       // 0.25 m x 0.40 m parapet ring
+    const y = H + 0.2;
+    add(M(xc, y, zc - W / 2 + 0.125, L, 0.4, 0.25), tint, st); add(M(xc, y, zc + W / 2 - 0.125, L, 0.4, 0.25), tint, st);
+    add(M(xc - L / 2 + 0.125, y, zc, 0.25, 0.4, W - 0.5), tint, st); add(M(xc + L / 2 - 0.125, y, zc, 0.25, 0.4, W - 0.5), tint, st);
+  }
+}
+const fac = instanced(facadeMaterial(tex), fm); fac.castShadow = true;
+unit.setAttribute('aTint', new THREE.InstancedBufferAttribute(new Float32Array(tints), 3));
+unit.setAttribute('aStone', new THREE.InstancedBufferAttribute(new Float32Array(stones), 1));
+updateWater(12.3);
+
+// ---- cameras
+const persp = (pos, at, fov = 60) => { const c = new THREE.PerspectiveCamera(fov, 1, 0.1, 3000); c.position.set(...pos); c.lookAt(...at); return c; };
+const tilesCam = new THREE.OrthographicCamera(-24, 24, 15, -15, 1, 200);
+tilesCam.position.set(150, 60, 0.5); tilesCam.up.set(0, 0, -1); tilesCam.lookAt(150, 0, 0.5);
+const cams = {
+  tiles: tilesCam,
+  street: persp([-46, 1.7, 2.2], [0, 5, -4]),
+  aerial: persp([-35, 48, 62], [2, 0, -6], 55),
+  close: persp([6, 1.7, 3.5], [10, 6, -10]),
+};
+const W = innerWidth, Hh = innerHeight;
+const views = view === 'grid' ? [['tiles', 0, Hh / 2], ['street', W / 2, Hh / 2], ['aerial', 0, 0], ['close', W / 2, 0]] : [[view, 0, 0]];
+const vw = view === 'grid' ? W / 2 : W, vh = view === 'grid' ? Hh / 2 : Hh;
+r.setScissorTest(true);
+for (const [n, x, y] of views) {
+  const c = cams[n];
+  if (c.isPerspectiveCamera) { c.aspect = vw / vh; c.updateProjectionMatrix(); }
+  else { const hw = c.top * vw / vh; c.left = -hw; c.right = hw; c.updateProjectionMatrix(); }
+  r.setViewport(x, y, vw, vh); r.setScissor(x, y, vw, vh); r.render(s, c);
+}
+document.getElementById('info').textContent = `bake ${size}²: ${bakeMs.toFixed(0)} ms (incl. frame yields)`;
+console.log(`BAKE_MS ${bakeMs.toFixed(0)}`);
+requestAnimationFrame(() => { window.__ready = true; });
+</script></body></html>
