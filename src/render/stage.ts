@@ -15,7 +15,7 @@ export const SUN_DIR = new THREE.Vector3(Math.sin(AZ) * Math.cos(EL), Math.sin(E
 export class Stage {
   renderer: THREE.WebGLRenderer;
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(80, 1, 0.1, 3000);
+  camera = new THREE.PerspectiveCamera(80, 1, 0.2, 3000);
   sun: THREE.DirectionalLight;
   hemi: THREE.HemisphereLight;
   sky: THREE.Mesh;
@@ -26,7 +26,7 @@ export class Stage {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 0.8;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene.fog = new THREE.FogExp2(0xd9d2c4, 0.00045);
     this.sun = new THREE.DirectionalLight(new THREE.Color().setRGB(1, 0.93, 0.82, THREE.LinearSRGBColorSpace), 3.0);
     this.sun.castShadow = true;

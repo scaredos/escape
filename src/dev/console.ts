@@ -46,7 +46,7 @@ export class DevConsole {
           if ((r[E.t] === T.SOLDIER || r[E.t] === T.CIV) && Math.hypot(r[E.vx], r[E.vy]) > 0.5) moving++;
         }
         const rep = { money: d?.money ?? 0, heat: d?.heat ?? 0, stars: starsOf(d?.heat ?? 0), phase: d?.phase ?? '', finale: d?.phase === 'Playing' ? 'none' : d?.finaleKind,
-          humans: counts.humans, soldiers: counts.soldiers, civilians: counts.civilians, bag: p?.bag ?? 0, armor: p?.armor ?? 0, passport: !!p?.passport, passports_missing: d?.passportsMissing ?? 0 };
+          humans: counts.humans, soldiers: counts.soldiers, civilians: counts.civilians, bag: p?.bag ?? 0, armor: p?.armor ?? 0, passport: !!p?.passport, passports_missing: d?.passportsMissing ?? 0, x: recs ? +recs[E.x].toFixed(2) : 0, y: recs ? +recs[E.y].toFixed(2) : 0, inset: recs ? (c.wq.insetAt(recs[E.x], recs[E.y]) || '') : '' };
         probe('report', rep); this.print(JSON.stringify(rep));
         const rep2 = { roadblocks: d?.roadblocks ?? 0, delivery_to: p?.deliveryLabel ?? '', delivery_reward: p?.deliveryReward ?? 0,
           delivery_left: p?.deliveryDeadline ? Math.round(p.deliveryDeadline - c.hostNow()) : 0, driving: (p?.car ?? -1) >= 0, near_car: !!c.carInReach,
@@ -73,6 +73,7 @@ export class DevConsole {
         break;
       }
       case 'shot': this.h.shot(parts[1] === 'showui'); break;
+      case 'cam': c.freeCam = parts[1] === 'off' || parts.length < 4 ? null : parts.slice(1, 6).map(Number); break;
       case 'fov': c.fovOverride = parseFloat(parts[1]) || 0; break;
       case 'look': c.yaw = (parseFloat(parts[1]) || 0) * Math.PI / 180; c.pitch = (parseFloat(parts[2]) || 0) * Math.PI / 180; break;
       default: this.print('unknown command ' + cmd);

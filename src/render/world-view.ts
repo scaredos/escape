@@ -57,6 +57,8 @@ export class WorldView {
     // sea surface: world rect + 400 m, top at -0.15
     const [x0, y0, x1, y1] = [-1500, -14500, 7500, 8500];
     const sea = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + 800, y1 - y0 + 800, 1, 1), waterMaterial(tex));
+    const wm = sea.material as THREE.Material; wm.polygonOffset = true; wm.polygonOffsetFactor = 4; wm.polygonOffsetUnits = 16; // never z-fight the ground above it
+    sea.renderOrder = 1;
     sea.rotation.x = -Math.PI / 2; sea.position.set((x0 + x1) / 2, -0.15, -(y0 + y1) / 2); sea.receiveShadow = true;
     sea.name = 'sea'; this.group.add(sea);
     this.buildSigns();

@@ -89,6 +89,7 @@ export class Session {
       reportExtra: () => this.sim ? { traffic_cars: this.sim.cars.traffic.count() } : {} });
     if (p.get('script')) new ScriptRunner(p.get('script')!, this.con, () => !!this.client.myRecNow(), () => performance.now() / 1000);
     this.spotProps = new SpotProps(world.stage.scene, world.gen.lights);
+    (window as any).__session = this;
     this.setupPointer();
     this.audio.attach(this.client);
     this.loop();
@@ -159,7 +160,7 @@ export class Session {
     let last = performance.now();
     const frame = (now: number) => {
       if (this.ended) return;
-      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      const dt = Math.min(0.25, (now - last) / 1000); last = now;
       const t0 = performance.now();
       const st = this.world.stage, c = this.client;
       const inputOn = !this.menuOpen && !this.con.open;

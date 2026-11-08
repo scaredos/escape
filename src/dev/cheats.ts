@@ -31,6 +31,12 @@ export function runCheat(sim: Sim, p: Player, line: string) {
       const arg = (args[0] || 'safehouse').toLowerCase();
       const spots = sim.wq.spots;
       let s;
+      if (arg.startsWith('door:')) {
+        const sp = spots.find((o) => o.mode === arg.slice(5) && o.shell >= 0); const sh = sp ? sim.wq.gen.shells[sp.shell] : null;
+        if (sp && sh && h) { const x = sh.doorX + sh.dx * 8, y = sh.doorY + sh.dy * 8; teleport(sim, p, x, y, 0.05, Math.atan2(-sh.dy, -sh.dx)); probe('tp', { mode: 'door', name: sp.name, x, y, ok: true }); }
+        else probe('tp', { mode: 'door', name: '', x: 0, y: 0, ok: false });
+        break;
+      }
       if (arg.startsWith('city:')) s = spots.find((o) => o.mode === 'safehouse' && o.inset === arg.slice(5));
       else if (arg === 'crate') s = spots.find((o) => o.mode === 'crate' && (!o.building || o.building === '-'));
       else if (arg === 'stash') s = spots.find((o) => o.mode === 'crate' && o.building && o.building !== '-');

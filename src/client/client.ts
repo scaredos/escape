@@ -54,7 +54,8 @@ export class Client {
   hostNow() { return this.realNow() + this.offset; }
   send(m: C2H, reliable = true) { this.link.send(m, reliable); }
   hello(name: string) { this.send({ t: 'hello', name, v: PROTOCOL_V, build: BUILD_ID }); }
-  addFeed(text: string) { this.feed.push({ text, t: this.realNow() }); if (this.feed.length > 12) this.feed.shift(); }
+  freeCam: number[] | null = null;
+  addFeed(text: string) { probe('feed', { text }); this.feed.push({ text, t: this.realNow() }); if (this.feed.length > 12) this.feed.shift(); }
 
   // ---------------------------------------------------------------- messages
   onMessage(m: H2C) {
@@ -157,12 +158,16 @@ export class Client {
     if (alive && !seated && this.ms && this.body) {
       const mx = (down('KeyD') ? 1 : 0) - (down('KeyA') ? 1 : 0), my = (down('KeyW') ? 1 : 0) - (down('KeyS') ? 1 : 0);
       const crouch = !!(this as any)._crouch;
-      const inp: InputMsg = { seq: ++this.seq, dt: Math.min(dt, 0.05), mx, my, yaw: this.yaw, pitch: this.pitch, sprint: down('ShiftLeft') || down('ShiftRight'),
-        jump: down('Space'), crouch, fire: inputEnabled && I.lmb, aim };
-      this.body.step(this.ms, inp as MoveInput, inp.dt, (priv?.bag ?? 0) > 0);
-      this.hist.set(inp.seq, [this.ms.x, this.ms.y, this.ms.z]);
-      this.pending.push(inp);
-      this.send({ t: 'input', inputs: this.pending.slice(-4) }, false);
+      // long frames (slow machines, headless tests) are split into <= 1/30 s input steps so no time is lost
+      const nSub = Math.max(1, Math.min(8, Math.ceil(dt / (1 / 30))));
+      for (let k = 0; k < nSub; k++) {
+        const inp: InputMsg = { seq: ++this.seq, dt: Math.min(dt, 0.25) / nSub, mx, my, yaw: this.yaw, pitch: this.pitch, sprint: down('ShiftLeft') || down('ShiftRight'),
+          jump: down('Space') && k === 0, crouch, fire: inputEnabled && I.lmb, aim };
+        this.body.step(this.ms, inp as MoveInput, inp.dt, (priv?.bag ?? 0) > 0);
+        this.hist.set(inp.seq, [this.ms.x, this.ms.y, this.ms.z]);
+        this.pending.push(inp);
+      }
+      this.send({ t: 'input', inputs: this.pending.slice(-(nSub + 3)) }, false);
       const k = Math.min(1, dt / 0.1); this.ms.x += this.corr.x * k; this.ms.y += this.corr.y * k; this.ms.z += this.corr.z * k; this.corr.multiplyScalar(1 - k);
       // own record = prediction
       if (me) { me[E.x] = this.ms.x; me[E.y] = this.ms.y; me[E.z] = this.ms.z - CAPSULE_HALF; me[E.yaw] = this.yaw; me[E.vx] = this.ms.vx; me[E.vy] = this.ms.vy; me[E.x0 + 2] = this.pitch;
@@ -327,6 +332,12 @@ export class Client {
   // ---------------------------------------------------------------- camera
   private camera(dt: number, me: EntRec | undefined, recs: Map<number, EntRec>, alive: boolean, seated: boolean, aim: boolean) {
     const cam = this.stage.camera;
+    if (this.freeCam) {
+      const [x, y, h, b, pt] = this.freeCam, yaw = (90 - b) * DEG, pi = pt * DEG;
+      cam.position.set(x, h, -y); cam.lookAt(x + Math.cos(yaw) * Math.cos(pi), h + Math.sin(pi), -(y + Math.sin(yaw) * Math.cos(pi)));
+      if (cam.fov !== (this.fovOverride || 70)) { cam.fov = this.fovOverride || 70; cam.updateProjectionMatrix(); }
+      return;
+    }
     this.carBlend = Math.max(0, Math.min(1, this.carBlend + (seated ? dt : -dt) / 0.3));
     this.adsBlend = Math.max(0, Math.min(1, this.adsBlend + ((aim && alive && !seated) ? dt : -dt) / 0.2));
     if (!me) return;

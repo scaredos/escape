@@ -9,8 +9,8 @@ export default defineConfig(({ command }) => ({
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 4000,
-    rollupOptions: { input: { main: resolve(__dirname, 'index.html'),
-      ...(command === 'serve' ? Object.fromEntries(previews.map((f) => [f, resolve(__dirname, 'preview', f)])) : {}) } },
+    rollupOptions: { input: { main: resolve(import.meta.dirname, 'index.html'),
+      ...(command === 'serve' ? Object.fromEntries(previews.map((f) => [f, resolve(import.meta.dirname, 'preview', f)])) : {}) } },
   },
   worker: { format: 'es' },
   server: { port: 5173, strictPort: true },
