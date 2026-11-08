@@ -54,6 +54,8 @@
 - Room code: 5 chars from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, peer id `escape-israel-<CODE>`; `unavailable-id` silently
   picks a new code. Default name `Player-NNNN`. Settings in `esc.settings` (quality auto/low/medium/high, sensitivity, FOV,
   volume, FPS). Quality "auto" = Low on SwiftShader/llvmpipe or ≤ 4 cores, else Medium.
+- Heartbeat: clients ping every 1 s from a timer; the host drops a client after 30 s of silence (spec: 10 s, choose) because
+  first frames on slow GPUs compile shaders for longer than 10 s.
 - `?offline` skips opening the PeerJS room (used by single-machine tests).
 - Audio: procedural Web Audio per the 06 addendum (shots, distant shots, UI, star up/down, countdown beeps, escape chord,
   tank blast, helicopter rotor loop). No music, no screams.

@@ -6,7 +6,7 @@ import type { Player, Sim } from '../game/sim';
 import type { WeaponType } from '../game/protocol';
 import { CAR_MODELS } from '../game/cars';
 
-export const HOST_CMDS = new Set(['escmoney', 'escheat', 'esctp', 'escgive', 'escsave', 'esccar', 'esctraffic', 'escuse', 'god', 'damageself', 'healself', 'damageselfdestruct', 'unlimitedhealth', 'esckillnear', 'escspawn']);
+export const HOST_CMDS = new Set(['escmoney', 'escheat', 'esctp', 'escgive', 'escsave', 'esccar', 'esctraffic', 'escuse', 'god', 'damageself', 'healself', 'damageselfdestruct', 'unlimitedhealth', 'esckillnear', 'escspawn', 'escbagfor']);
 
 export function teleport(sim: Sim, p: Player, x: number, y: number, z: number, yaw: number) {
   const h = p.pawn; if (!h) return;
@@ -104,6 +104,9 @@ export function runCheat(sim: Sim, p: Player, line: string) {
     case 'damageself': if (h) sim.damage(h, parseFloat(args[0]) || 10, null); break;
     case 'healself': if (h) h.hp = Math.min(h.maxHp, h.hp + (parseFloat(args[0]) || 100)); break;
     case 'damageselfdestruct': if (h && !h.dead) { d.god.delete(p.id); sim.kill(h, null); } break;
+    case 'escbagfor': { // test helper: EscBagFor <name> <value>
+      const q = [...sim.players.values()].find((o) => o.name === args[0]); if (q) q.priv.bag = parseInt(args[1]) || 0; break;
+    }
     case 'escspawn': { // test helper: EscSpawn civ|soldier [dist]
       if (!h) break; const dist = parseFloat(args[1]) || 6, fx = Math.cos(h.yaw), fy = Math.sin(h.yaw);
       if ((args[0] || '').startsWith('sol')) sim.bots.spawnSoldierAt(h.x + fx * dist, h.y + fy * dist, h.x, h.y);

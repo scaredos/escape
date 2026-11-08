@@ -7,11 +7,11 @@ import { spawn } from 'node:child_process';
 const peer = spawn(process.execPath, ['node_modules/peer/dist/bin/peerjs.js', '--port', '9000', '--key', 'peerjs', '--path', '/'], { stdio: 'ignore' });
 const server = await createServer({ server: { port: 0 }, logLevel: 'error' }); await server.listen();
 const port = server.httpServer.address().port, base = `http://localhost:${port}`;
-const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-features=WebRtcHideLocalIpsWithMdns'] });
 const room = 'NETT', common = `&peerhost=localhost&peerport=9000&nosave&mute&quality=low`;
 const watch = (page, tag, sink) => page.on('console', (m) => {
-  const t = m.text(); if (m.type() === 'error') console.log(`[${tag} error]`, t);
-  if (t.startsWith('PROBE ')) { const o = JSON.parse(t.slice(6)); sink.push(o); if (['world_ready', 'room_open', 'script_done', 'report', 'feed'].includes(o.event)) console.log(tag, t.slice(6, 220)); }
+  const t = m.text(); if (m.type() === 'error' || (tag === 'CLIENT' && !t.startsWith('PROBE'))) console.log(`[${tag} ${m.type()}]`, t.slice(0, 300));
+  if (t.startsWith('PROBE ')) { const o = JSON.parse(t.slice(6)); sink.push(o); if (tag === 'CLIENT' || ['world_ready', 'room_open', 'script_done', 'report'].includes(o.event)) console.log(tag, t.slice(6, 220)); }
 });
 const hostP = [], cliP = [];
 const host = await (await browser.newContext({ viewport: { width: 960, height: 540 } })).newPage(); watch(host, 'HOST', hostP);
@@ -19,6 +19,7 @@ await host.goto(`${base}/?host=1&room=${room}${common}&name=Host&script=${encode
 const until = async (arr, ev, ms) => { const end = Date.now() + ms; while (!arr.some((o) => o.event === ev) && Date.now() < end) await host.waitForTimeout(250); return arr.some((o) => o.event === ev); };
 await until(hostP, 'room_open', 300000);
 const cli = await (await browser.newContext({ viewport: { width: 960, height: 540 } })).newPage(); watch(cli, 'CLIENT', cliP);
+cli.on('framenavigated', (f) => { if (f === cli.mainFrame()) console.log('CLIENT URL', decodeURIComponent(f.url()).slice(0, 300)); });
 let shots = 0;
 cli.on('console', async (m) => { if (m.text().startsWith('PROBE {"event":"shot"')) { shots++; await cli.screenshot({ path: `tests/screenshots/net_client_${shots}.png` }); } });
 await cli.goto(`${base}/?join=${room}${common}&name=Friend&script=${encodeURIComponent('wait 8;shot showui;wait 1;EscReport;wait 6;EscReport;shot showui;wait 1')}`);

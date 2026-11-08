@@ -87,7 +87,7 @@ export class Sim {
     const h = p.pawn;
     if (h) {
       if (p.priv.car >= 0) this.cars.exit(p, true);
-      if (p.priv.bag > 0) { this.econ.dropBag(p.lastAliveX, p.lastAliveY, p.priv.bag); probe('bag_drop', { value: p.priv.bag, x: p.lastAliveX, y: p.lastAliveY }); }
+      if (p.priv.bag > 0) { this.econ.dropBag(p.lastAliveX, p.lastAliveY, p.priv.bag); probe('bag_drop', { value: p.priv.bag, x: p.lastAliveX, y: p.lastAliveY }); this.broadcast('A bag was dropped!'); }
       h.body.dispose(); this.humans.delete(h.id);
     }
     this.players.delete(pid);

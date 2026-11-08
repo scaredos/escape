@@ -169,7 +169,7 @@ export class Session {
       this.world.view.update(st.camera.position.x, -st.camera.position.z);
       this.spotProps.sync(c.spots.values(), c.hostNow()); this.spotProps.updateLights(st.camera.position);
       updateWater(now / 1000);
-      st.frame(now / 1000);
+      if (!this.opts.params.has('norender')) st.frame(now / 1000);
       const me = c.myRecNow();
       const v = c.hudView(me);
       if (this.room && performance.now() - this.roomShownAt < 10000) v.roomBanner = `Room ${this.room} - invite friends: ${location.origin}${location.pathname}?join=${this.room}`;

@@ -43,8 +43,8 @@ export function openHost(code: string, params: URLSearchParams, side: HostSide):
         conn.on('data', (d) => { entry.last = performance.now(); entry.handler?.(d as C2H); });
         conn.on('close', () => { if (clients.has(cid)) { clients.delete(cid); side.onDisconnect(cid); } });
       });
-      setInterval(() => { // 10 s of silence = disconnect
-        for (const [cid, c] of clients) if (performance.now() - c.last > 10000 && c.handler) { clients.delete(cid); c.rel?.close(); c.snap?.close(); side.onDisconnect(cid); }
+      setInterval(() => { // 30 s of silence = disconnect (spec says 10 s, choose: slow first frames compile shaders for >10 s)
+        for (const [cid, c] of clients) if (performance.now() - c.last > 30000 && c.handler) { clients.delete(cid); c.rel?.close(); c.snap?.close(); side.onDisconnect(cid); }
       }, 1000);
     };
     tryOpen(code, 5);
@@ -70,7 +70,7 @@ export class PeerClientLink implements ClientLink {
         this.rel = this.peer.connect(host, { reliable: true, label: 'rel', serialization: 'json' });
         this.snap = this.peer.connect(host, { reliable: false, label: 'snap', serialization: 'json' });
         let n = 0;
-        const opened = () => { if (++n === 2) { clearTimeout(timer); resolve(); } };
+        const opened = () => { if (++n === 2) { clearTimeout(timer); setInterval(() => this.send({ t: 'ping', t0: performance.now() / 1000 }, true), 1000); resolve(); } };
         for (const ch of [this.rel, this.snap]) {
           ch.on('open', opened);
           ch.on('data', (d) => this.onMessage(d as H2C));
