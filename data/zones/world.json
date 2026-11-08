@@ -1,0 +1,1336 @@
+{
+ "insets": [
+  {
+   "name": "telaviv",
+   "offset": [
+    0,
+    0
+   ],
+   "gen": "gen/telaviv"
+  },
+  {
+   "name": "haifa",
+   "offset": [
+    1500,
+    6000
+   ],
+   "gen": "gen/haifa"
+  },
+  {
+   "name": "jerusalem",
+   "offset": [
+    5000,
+    -2500
+   ],
+   "gen": "gen/jerusalem"
+  },
+  {
+   "name": "eilat",
+   "offset": [
+    3500,
+    -14000
+   ],
+   "gen": "gen/eilat"
+  }
+ ],
+ "bounds": [
+  -1500,
+  -14500,
+  7500,
+  8500
+ ],
+ "west_coast": [
+  [
+   -1400,
+   -8000
+  ],
+  [
+   -1150,
+   -6000
+  ],
+  [
+   -800,
+   -4000
+  ],
+  [
+   -450,
+   -2000
+  ],
+  [
+   -170,
+   0
+  ],
+  [
+   11.4,
+   470.0
+  ],
+  [
+   87.4,
+   570.0
+  ],
+  [
+   140.6,
+   670.0
+  ],
+  [
+   168.6,
+   770.0
+  ],
+  [
+   287.1,
+   870.0
+  ],
+  [
+   293.0,
+   970.0
+  ],
+  [
+   317.0,
+   1070.0
+  ],
+  [
+   400.0,
+   1170.0
+  ],
+  [
+   529.2,
+   1270.0
+  ],
+  [
+   841.4,
+   1370.0
+  ],
+  [
+   947.1,
+   1470.0
+  ],
+  [
+   1023.5,
+   1570.0
+  ],
+  [
+   1072.8,
+   1670.0
+  ],
+  [
+   1105.2,
+   1770.0
+  ],
+  [
+   1164.2,
+   1870.0
+  ],
+  [
+   1224.5,
+   1970.0
+  ],
+  [
+   1236.5,
+   2000.0
+  ],
+  [
+   1240,
+   3000
+  ],
+  [
+   1180,
+   4000
+  ],
+  [
+   1170,
+   5000
+  ],
+  [
+   1230,
+   6000
+  ],
+  [
+   1260,
+   6689.0
+  ],
+  [
+   3900.0,
+   6691.0
+  ],
+  [
+   3950.0,
+   7500
+  ],
+  [
+   4050.0,
+   8500
+  ]
+ ],
+ "highways": [
+  {
+   "name": "Highway 2",
+   "pts": [
+    [
+     1397.3,
+     2000.0
+    ],
+    [
+     1402.0,
+     2204.2
+    ],
+    [
+     1450.0,
+     2400.0
+    ],
+    [
+     1512.4,
+     2619.1
+    ],
+    [
+     1565.8,
+     2803.1
+    ],
+    [
+     1630.2,
+     3002.2
+    ],
+    [
+     1706.7,
+     3203.0
+    ],
+    [
+     1797.8,
+     3396.4
+    ],
+    [
+     1878.9,
+     3545.3
+    ],
+    [
+     1999.6,
+     3748.8
+    ],
+    [
+     2095.6,
+     3902.4
+    ],
+    [
+     2193.0,
+     4054.7
+    ],
+    [
+     2319.6,
+     4252.1
+    ],
+    [
+     2411.7,
+     4395.2
+    ],
+    [
+     2542.2,
+     4585.2
+    ],
+    [
+     2641.5,
+     4725.7
+    ],
+    [
+     2768.6,
+     4907.5
+    ],
+    [
+     2881.0,
+     5079.5
+    ],
+    [
+     2969.6,
+     5238.7
+    ],
+    [
+     3049.1,
+     5429.1
+    ],
+    [
+     3111.8,
+     5638.0
+    ],
+    [
+     3152.2,
+     5806.4
+    ],
+    [
+     3163.2,
+     6000.0
+    ]
+   ]
+  },
+  {
+   "name": "Highway 1",
+   "pts": [
+    [
+     2000.0,
+     175.9
+    ],
+    [
+     2201.6,
+     168.3
+    ],
+    [
+     2378.2,
+     73.5
+    ],
+    [
+     2506.2,
+     -82.9
+    ],
+    [
+     2658.2,
+     -248.3
+    ],
+    [
+     2812.1,
+     -343.2
+    ],
+    [
+     3011.6,
+     -418.5
+    ],
+    [
+     3200.0,
+     -470.0
+    ],
+    [
+     3402.6,
+     -498.9
+    ],
+    [
+     3616.8,
+     -517.8
+    ],
+    [
+     3800.0,
+     -560.0
+    ],
+    [
+     3987.9,
+     -645.5
+    ],
+    [
+     4178.0,
+     -756.3
+    ],
+    [
+     4350.1,
+     -867.3
+    ],
+    [
+     4510.9,
+     -979.2
+    ],
+    [
+     4655.9,
+     -1100.0
+    ],
+    [
+     4805.6,
+     -1226.1
+    ],
+    [
+     5000.0,
+     -1249.1
+    ]
+   ]
+  },
+  {
+   "name": "Highway 90",
+   "pts": [
+    [
+     5579.8,
+     -2500.0
+    ],
+    [
+     5578.5,
+     -2708.8
+    ],
+    [
+     5571.8,
+     -2927.7
+    ],
+    [
+     5556.8,
+     -3143.0
+    ],
+    [
+     5543.3,
+     -3344.9
+    ],
+    [
+     5531.6,
+     -3521.2
+    ],
+    [
+     5517.5,
+     -3711.4
+    ],
+    [
+     5499.8,
+     -3909.0
+    ],
+    [
+     5477.7,
+     -4107.4
+    ],
+    [
+     5438.7,
+     -4362.6
+    ],
+    [
+     5394.2,
+     -4552.0
+    ],
+    [
+     5339.1,
+     -4743.6
+    ],
+    [
+     5280.6,
+     -4937.5
+    ],
+    [
+     5225.6,
+     -5133.6
+    ],
+    [
+     5181.0,
+     -5332.0
+    ],
+    [
+     5153.9,
+     -5532.6
+    ],
+    [
+     5152.0,
+     -5735.5
+    ],
+    [
+     5176.6,
+     -5940.6
+    ],
+    [
+     5202.9,
+     -6078.6
+    ],
+    [
+     5250.0,
+     -6287.5
+    ],
+    [
+     5297.1,
+     -6498.6
+    ],
+    [
+     5334.0,
+     -6712.0
+    ],
+    [
+     5350.7,
+     -6927.6
+    ],
+    [
+     5346.3,
+     -7073.0
+    ],
+    [
+     5322.8,
+     -7296.8
+    ],
+    [
+     5284.0,
+     -7525.6
+    ],
+    [
+     5251.8,
+     -7679.3
+    ],
+    [
+     5197.6,
+     -7909.6
+    ],
+    [
+     5159.4,
+     -8061.6
+    ],
+    [
+     5102.5,
+     -8284.9
+    ],
+    [
+     5050.0,
+     -8500.0
+    ],
+    [
+     4995.4,
+     -8704.9
+    ],
+    [
+     4954.3,
+     -8836.7
+    ],
+    [
+     4889.6,
+     -9029.6
+    ],
+    [
+     4826.3,
+     -9219.3
+    ],
+    [
+     4753.5,
+     -9472.7
+    ],
+    [
+     4715.0,
+     -9666.9
+    ],
+    [
+     4696.3,
+     -9868.6
+    ],
+    [
+     4695.9,
+     -10011.8
+    ],
+    [
+     4709.8,
+     -10236.3
+    ],
+    [
+     4736.2,
+     -10465.0
+    ],
+    [
+     4758.0,
+     -10615.5
+    ],
+    [
+     4792.8,
+     -10832.0
+    ],
+    [
+     4825.4,
+     -11029.7
+    ],
+    [
+     4856.3,
+     -11250.0
+    ],
+    [
+     4881.1,
+     -11427.0
+    ],
+    [
+     4909.9,
+     -11603.1
+    ],
+    [
+     4945.3,
+     -11808.6
+    ],
+    [
+     4951.1,
+     -12000.0
+    ]
+   ]
+  }
+ ],
+ "zones": [
+  {
+   "name": "Ben Gurion Airport",
+   "kind": "airport",
+   "rect": [
+    2400,
+    -1200,
+    3600,
+    -600
+   ]
+  },
+  {
+   "name": "Sharon fields",
+   "kind": "fields",
+   "rect": [
+    1900,
+    2300,
+    2700,
+    3200
+   ]
+  },
+  {
+   "name": "Coastal orchards",
+   "kind": "fields",
+   "rect": [
+    1500,
+    4300,
+    2050,
+    5400
+   ]
+  },
+  {
+   "name": "Kfar HaSharon",
+   "kind": "village",
+   "rect": [
+    2600,
+    3700,
+    3100,
+    4100
+   ]
+  },
+  {
+   "name": "Lod plain fields",
+   "kind": "fields",
+   "rect": [
+    2400,
+    -2300,
+    3800,
+    -1350
+   ]
+  },
+  {
+   "name": "Abu Ghosh",
+   "kind": "village",
+   "rect": [
+    4150,
+    -650,
+    4650,
+    -250
+   ]
+  },
+  {
+   "name": "Judean foothills",
+   "kind": "fields",
+   "rect": [
+    3900,
+    -2400,
+    4800,
+    -1450
+   ]
+  },
+  {
+   "name": "Arad junction",
+   "kind": "village",
+   "rect": [
+    5750,
+    -4700,
+    6250,
+    -4200
+   ]
+  },
+  {
+   "name": "Negev west",
+   "kind": "desert",
+   "rect": [
+    2600,
+    -11800,
+    4500,
+    -3200
+   ]
+  },
+  {
+   "name": "Negev east",
+   "kind": "desert",
+   "rect": [
+    5800,
+    -11800,
+    7300,
+    -5000
+   ]
+  },
+  {
+   "name": "Kibbutz Yahel",
+   "kind": "village",
+   "rect": [
+    5050,
+    -10600,
+    5500,
+    -10200
+   ]
+  }
+ ],
+ "spots": [
+  {
+   "mode": "safehouse",
+   "name": "Safehouse (The Postel)",
+   "x": 1164.3,
+   "y": 1275.4,
+   "building": "w265656590",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "shop",
+   "name": "Abu Shmulik's Garage - guns, armour, fence",
+   "x": 1531.3,
+   "y": 1260.0,
+   "building": "w265984631",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "casino",
+   "name": "Club Gagarin Casino",
+   "x": 1689.1,
+   "y": 1060.2,
+   "building": "w265984634",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "job",
+   "name": "McShekel's",
+   "x": 1251.5,
+   "y": 1153.8,
+   "building": "w265984660",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "bank",
+   "name": "Jaffa Savings Bank",
+   "x": 1217.3,
+   "y": 1235.6,
+   "building": "w265656589",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "bank",
+   "name": "Shuk Credit Bank",
+   "x": 1262.9,
+   "y": 1081.9,
+   "building": "w265984678",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "escape",
+   "name": "Boat out of Jaffa",
+   "x": 335.0,
+   "y": 1307.4,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Stash",
+   "x": 1164.3,
+   "y": 1275.4,
+   "building": "w265656590",
+   "inset": "telaviv",
+   "pistol": true
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 97.6,
+   "y": 66.2,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1042.7,
+   "y": 75.6,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1646.4,
+   "y": 1954.7,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1861.4,
+   "y": 381.0,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 231.2,
+   "y": 688.3,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1339.6,
+   "y": 531.6,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 625.2,
+   "y": 315.0,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1948.6,
+   "y": 1599.7,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 736.0,
+   "y": 1113.3,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1254.9,
+   "y": 1938.9,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1919.4,
+   "y": 776.8,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1568.1,
+   "y": 163.9,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1110.8,
+   "y": 716.5,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1606.6,
+   "y": 781.7,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1286.4,
+   "y": 233.0,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 861.7,
+   "y": 468.8,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1521.6,
+   "y": 1521.9,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1041.4,
+   "y": 1502.3,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1811.4,
+   "y": 1277.3,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1349.8,
+   "y": 1713.7,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1294.3,
+   "y": 1495.6,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1546.2,
+   "y": 469.9,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1449.5,
+   "y": 999.9,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 273.5,
+   "y": 158.3,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "safehouse",
+   "name": "Safehouse (Carmel Backpackers)",
+   "x": 2641.1,
+   "y": 6656.2,
+   "building": "w190109318",
+   "inset": "haifa"
+  },
+  {
+   "mode": "shop",
+   "name": "Uncle Moti's Motors - guns, armour, fence",
+   "x": 1703.2,
+   "y": 7429.1,
+   "building": "w176540320",
+   "inset": "haifa"
+  },
+  {
+   "mode": "bank",
+   "name": "Carmel Mutual Savings",
+   "x": 2009.9,
+   "y": 6768.6,
+   "building": "w133462190",
+   "inset": "haifa"
+  },
+  {
+   "mode": "bank",
+   "name": "Bay & Port Trust",
+   "x": 2881.8,
+   "y": 6706.3,
+   "building": "w189599270",
+   "inset": "haifa"
+  },
+  {
+   "mode": "escape",
+   "name": "Boat out of Haifa port",
+   "x": 3301.2,
+   "y": 6795.9,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 2484.9,
+   "y": 7777.3,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 2338.9,
+   "y": 6050.3,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 3173.4,
+   "y": 6192.5,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1800.0,
+   "y": 7953.9,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1874.9,
+   "y": 6257.7,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 2828.9,
+   "y": 6049.5,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1955.9,
+   "y": 7157.2,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 2553.7,
+   "y": 6302.4,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 2972.9,
+   "y": 6416.6,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 1728.0,
+   "y": 6688.6,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 2184.2,
+   "y": 7030.6,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 2042.2,
+   "y": 7954.0,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "safehouse",
+   "name": "Safehouse (Rooftop Hostel)",
+   "x": 6190.4,
+   "y": -1786.7,
+   "building": "w160318257",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "shop",
+   "name": "Shuki's Pawn & Hardware - guns, armour, fence",
+   "x": 5640.1,
+   "y": -1498.7,
+   "building": "w262948282",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "forger",
+   "name": "Shimon's Passport Photos & Print",
+   "x": 5566.1,
+   "y": -754.2,
+   "building": "w551037976",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "bank",
+   "name": "Golden City Credit",
+   "x": 5266.2,
+   "y": -732.9,
+   "building": "w546094562",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "bank",
+   "name": "Zion Square Savings & Loan",
+   "x": 6357.3,
+   "y": -2090.1,
+   "building": "w158080734",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 6892.6,
+   "y": -573.2,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 5237.3,
+   "y": -2373.0,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 6891.8,
+   "y": -1784.8,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 6504.6,
+   "y": -1289.9,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 5065.2,
+   "y": -1420.4,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 6386.2,
+   "y": -580.2,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 5071.5,
+   "y": -1920.1,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 6916.3,
+   "y": -2256.2,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 5356.0,
+   "y": -1150.8,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 5330.6,
+   "y": -1648.6,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 6296.8,
+   "y": -2366.7,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 5544.4,
+   "y": -1762.9,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "safehouse",
+   "name": "Safehouse (Coral Motel)",
+   "x": 4645.1,
+   "y": -12095.3,
+   "building": "w959763370",
+   "inset": "eilat"
+  },
+  {
+   "mode": "shop",
+   "name": "Duty-Free Dudu - guns, armour, fence",
+   "x": 4930.0,
+   "y": -12947.4,
+   "building": "w852999335",
+   "inset": "eilat"
+  },
+  {
+   "mode": "bank",
+   "name": "Red Sea Offshore Bank",
+   "x": 5041.5,
+   "y": -13132.6,
+   "building": "w852999292",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crossing",
+   "name": "Southern crossing (Taba road)",
+   "x": 3995.4,
+   "y": -13985.0,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 3685.2,
+   "y": -12759.5,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 5446.2,
+   "y": -12454.8,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 3604.1,
+   "y": -12071.9,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 4410.1,
+   "y": -13345.9,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 4239.0,
+   "y": -12485.4,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 3856.8,
+   "y": -13504.7,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 4203.4,
+   "y": -12937.3,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 4214.0,
+   "y": -12041.7,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 5448.3,
+   "y": -13107.1,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "crate",
+   "name": "Crate",
+   "x": 4711.8,
+   "y": -12494.2,
+   "building": "",
+   "inset": "eilat"
+  },
+  {
+   "mode": "airport",
+   "name": "Ben Gurion Airport - departures",
+   "x": 3000.0,
+   "y": -900.0,
+   "building": "",
+   "inset": ""
+  },
+  {
+   "mode": "delivery",
+   "name": "Yossi's Express Courier",
+   "x": 730.7,
+   "y": 1277.1,
+   "building": "",
+   "inset": "telaviv"
+  },
+  {
+   "mode": "delivery",
+   "name": "Carmel Cargo & Courier",
+   "x": 2877.3,
+   "y": 6153.8,
+   "building": "",
+   "inset": "haifa"
+  },
+  {
+   "mode": "delivery",
+   "name": "Moshe's Moving & Parcels",
+   "x": 6186.0,
+   "y": -2229.4,
+   "building": "",
+   "inset": "jerusalem"
+  },
+  {
+   "mode": "delivery",
+   "name": "Red Sea Rush Deliveries",
+   "x": 4475.5,
+   "y": -12446.7,
+   "building": "",
+   "inset": "eilat"
+  }
+ ]
+}

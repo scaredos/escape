@@ -1,0 +1,11 @@
+<!doctype html><html><body style="margin:0"><script type="module">
+import * as THREE from 'three';
+import { GeoBuilder, P, M, vertexColorMaterial } from '../src/render/geo.ts';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
+const s = new THREE.Scene(); s.background = new THREE.Color(0x9fc3e6);
+s.add(new THREE.HemisphereLight(0xbfd4ea, 0xc8b394, 1)); const d = new THREE.DirectionalLight(0xffffff, 3); d.position.set(-3, 5, 4); s.add(d);
+const b = new GeoBuilder().add(P.box(1, 1, 1), 0xcc3333, 0.5, M([0, 0, 0.5])).add(P.cylZ(0.3, 0.2, 2), 0x33aa33, 0.8, M([1.5, 0, 0]));
+s.add(new THREE.Mesh(b.build(), vertexColorMaterial()));
+const c = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100); c.position.set(3, 3, 5); c.lookAt(0.7, 0.5, 0);
+r.render(s, c); window.__ready = true;
+</script></body></html>

@@ -1,0 +1,27 @@
+{
+  "name": "escape-israel-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "pack-data": "node tools/pack-data.mjs",
+    "dev": "vite",
+    "build": "node tools/pack-data.mjs && tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview --port 4173",
+    "test": "playwright test",
+    "peer": "peerjs --port 9000 --key peerjs --path /"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
+    "peerjs": "1.5.5",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@types/three": "0.187.0",
+    "peer": "1.0.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.6"
+  }
+}
