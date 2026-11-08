@@ -193,8 +193,9 @@ export class Cars {
     if (drive < 0 && v > -10) accel = -0.15 * 20.6 * RATIOS[0] * torqueCurve(6000 * RATIOS[0] * Math.abs(v) / DES_TOP) * -drive * 0.82;
     const driven = spec.driven === 'all' ? [0, 1, 2, 3] : [2, 3];
     for (let i = 0; i < 4; i++) vc.setWheelEngineForce(i, driven.includes(i) ? mass * accel / driven.length : 0);
-    const brakeF = brake * mass * 8 / 4 * 0.05 + (accel === 0 && drive === 0 && c.thr < 0.05 && !c.driver && !c.ai ? 0 : 0);
-    for (let i = 0; i < 4; i++) vc.setWheelBrake(i, brakeF + (i >= 2 ? c.hb * mass * 6 / 2 * 0.05 : 0));
+    // Rapier brake = rolling-friction impulse per step: service brake ~8 m/s^2 over 4 wheels, handbrake ~6 m/s^2 on the rear pair
+    const brakeF = brake * mass * 8 / 4 / 60;
+    for (let i = 0; i < 4; i++) vc.setWheelBrake(i, brakeF + (i >= 2 ? c.hb * mass * 6 / 2 / 60 : 0));
     for (let i = 2; i < 4; i++) vc.setWheelSideFrictionStiffness(i, c.hb > 0.5 ? 0.3 : 1.0);
     // steering
     const sr = Math.abs(steerIn) > Math.abs(c.steerIn) && Math.sign(steerIn) === Math.sign(c.steerIn || steerIn) ? 2.5 : 5;

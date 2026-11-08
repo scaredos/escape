@@ -31,6 +31,7 @@ export function runCheat(sim: Sim, p: Player, line: string) {
       const arg = (args[0] || 'safehouse').toLowerCase();
       const spots = sim.wq.spots;
       let s;
+      if (arg.startsWith('xy:')) { const [x, y] = arg.slice(3).split(',').map(Number); teleport(sim, p, x, y, sim.phys.groundZ(x, y, 10, 20) + 0.05, h ? h.yaw : 0); probe('tp', { mode: 'xy', name: '', x, y, ok: true }); break; }
       if (arg.startsWith('door:')) {
         const sp = spots.find((o) => o.mode === arg.slice(5) && o.shell >= 0); const sh = sp ? sim.wq.gen.shells[sp.shell] : null;
         if (sp && sh && h) { const x = sh.doorX + sh.dx * 8, y = sh.doorY + sh.dy * 8; teleport(sim, p, x, y, 0.05, Math.atan2(-sh.dy, -sh.dx)); probe('tp', { mode: 'door', name: sp.name, x, y, ok: true }); }
@@ -64,6 +65,10 @@ export function runCheat(sim: Sim, p: Player, line: string) {
     case 'esccar': {
       if (!h) break;
       const mode = (args[0] || '').toLowerCase();
+      if (mode === 'spawn') { // test helper: EscCar spawn <mapYawDeg> [model] -> a new car under you, entered
+        const yaw = (parseFloat(args[1]) || 0) * Math.PI / 180, c = sim.cars.spawn((args[2] as any) || 'sedan', h.x, h.y, 0.5, yaw);
+        sim.cars.enter(p, c); probe('cheat_car', { mode, car: c.id, in: true }); break;
+      }
       if (mode === 'traffic') sim.cars.traffic.frozen = true;
       let best = null as any, bd = Infinity;
       for (const c of sim.cars.cars.values()) {
