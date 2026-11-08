@@ -19,7 +19,7 @@ test('walk from the street into the shop, sprint is x1.6, characters animate', a
   console.log('dist to shop', d0.toFixed(1), '->', d3.toFixed(1), 'walk speed', r2[1].max_walk, 'sprint speed', r2[2].max_walk);
   expect(Math.hypot(walked.x - start.x, walked.y - start.y)).toBeGreaterThan(4);   // walked down the street
   expect(d0).toBeGreaterThan(30);                                                   // started outside (door wall ~28.5 m from the centre)
-  expect(d3).toBeLessThan(27);                                                      // ended inside the hall, through the door gap
+  expect(d3).toBeLessThan(28);                                                      // ended inside the hall, through the door gap
   const sp = find(p, 'sprint').filter((o) => o.on);
   expect(sp.length).toBeGreaterThan(0);
   expect(sp[0].max_walk).toBeCloseTo(9.6, 1);

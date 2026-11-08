@@ -28,6 +28,11 @@
 - Characters: **option B** (code-built 26-bone rig with rigid parts, procedural walk/run/sprint/seated/hands-up/aim), zero
   download, with a one-draw-call far LOD beyond 70 m.
 - Props and vehicles are built in code (`render/props`, `render/vehicles`), each prop also has a low-poly LOD.
+- **Draw calls:** every vertex-coloured street/roof/scatter prop lives in ONE `BatchedMesh` (multi-draw); per-instance
+  detail/LOD geometry and distance culling are refreshed from a 100 m grid when the camera moves 15 m. Hills and rocks
+  (textured) stay instanced per chunk with a LOD swap. Each character is one skinned mesh (rigid parts weighted to the
+  code-built bones). Layers sharing a material are merged for rendering. Measured: 160-275 draw calls (incl. shadows),
+  0.8-1.1 M triangles; 6-8 ms per frame uncapped on an RTX 5080 at Medium, host simulation included (laptop not measured).
 - Textures are baked on the GPU at load (11 sets + window atlas, ~0.4 s on a desktop GPU). Facade windows use the baked atlas.
 - Sea surface uses polygon offset so it never z-fights the ground 15 cm above it at distance.
 - Venue point lights: the 6 nearest hall lights within ~40 m are switched on (pooled `PointLight`s).

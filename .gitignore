@@ -5,3 +5,4 @@ playwright-report
 tests/screenshots/*.png
 !tests/screenshots/.keep
 *.log
+escape-israel-web.zip

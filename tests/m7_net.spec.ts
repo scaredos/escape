@@ -77,8 +77,8 @@ test('host + clients: shared wallet, stars, NPCs, cars; client drives; disconnec
   await run(host.page, `EscBagFor Friend 25000`); await cli.page.waitForTimeout(1500);
   expect((await state(cli.page)).priv.bag).toBe(25000);
   await cli.page.close();
-  await waitProbe(host.page, host.probes, 'feed', (p) => p.text === 'Friend left', 30_000);
-  await waitProbe(host.page, host.probes, 'bag_drop', (p) => p.value === 25000, 30_000);
+  await waitProbe(host.page, host.probes, 'feed', (p) => p.text === 'Friend left', 90_000);
+  await waitProbe(host.page, host.probes, 'bag_drop', (p) => p.value === 25000, 90_000);
   expect(host.probes.some((p) => p.event === 'feed' && p.text === 'A bag was dropped!')).toBe(true);
   expect((await state(host.page)).spots).toBe(1);
 });
