@@ -26,8 +26,8 @@ export class Input {
   }
   isDown(code: string) { return this.held.has(code) || (this.synth.get(code) ?? 0) > performance.now(); }
   /** EscKey: synthesise a press through the real path, held for `sec`. */
-  key(code: string, sec = 0.15) { this.pressed.push(code); this.synth.set(code, performance.now() + sec * 1000); }
+  key(code: string, sec = 0.15) { if (code === 'Mouse0') this.lmbPressed = true; this.pressed.push(code); this.synth.set(code, performance.now() + sec * 1000); }
   take(): string[] { const p = this.pressed; this.pressed = []; return p; }
   takeMouse() { const r = [this.mouseDx, this.mouseDy]; this.mouseDx = this.mouseDy = 0; return r; }
 }
-export const KEY_NAMES: Record<string, string> = { E: 'KeyE', F: 'KeyF', M: 'KeyM', W: 'KeyW', A: 'KeyA', S: 'KeyS', D: 'KeyD', LEFTSHIFT: 'ShiftLeft', UP: 'ArrowUp', DOWN: 'ArrowDown', SPACEBAR: 'Space', R: 'KeyR', '1': 'Digit1', '2': 'Digit2', '3': 'Digit3' };
+export const KEY_NAMES: Record<string, string> = { LMB: 'Mouse0', RMB: 'Mouse2', E: 'KeyE', F: 'KeyF', M: 'KeyM', W: 'KeyW', A: 'KeyA', S: 'KeyS', D: 'KeyD', LEFTSHIFT: 'ShiftLeft', UP: 'ArrowUp', DOWN: 'ArrowDown', SPACEBAR: 'Space', R: 'KeyR', '1': 'Digit1', '2': 'Digit2', '3': 'Digit3' };

@@ -288,7 +288,7 @@ export class Client {
     const p = this.priv; if (!p || !inputEnabled) { this.input.lmbPressed = false; return; }
     const slot = p.weapons[p.active]; if (!slot) { this.input.lmbPressed = false; return; }
     const w = WEAPONS[slot.type], now = this.hostNow();
-    const want = w.auto ? this.input.lmb : this.input.lmbPressed; this.input.lmbPressed = false;
+    const want = w.auto ? (this.input.lmb || this.input.isDown('Mouse0')) : this.input.lmbPressed; this.input.lmbPressed = false;
     if (!want || now - this.lastShot < w.interval || p.reloadEnd > 0 || now < p.equipEnd) return;
     const mag = this.localMag[p.active] ?? slot.mag;
     if (mag <= 0) { if (slot.spare > 0) this.send({ t: 'reload' }); return; }
