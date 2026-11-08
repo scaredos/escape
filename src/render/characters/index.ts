@@ -86,9 +86,22 @@ export function buildCharacter(look: Look): CharacterVisual {
     o.rotation.order = 'YZX'; // R = Ry(yaw) * Rz(swing/pitch) * Rx(abduct/roll)
     if (parent) { o.position.subVectors(rig.J[name], rig.J[parent]); B[parent].add(o); }
     B[name] = o;
-    const g = rig.local.get(name);
-    if (g) { const m = new THREE.Mesh(g, vertexColorMaterial()); m.castShadow = true; m.receiveShadow = true; o.add(m); }
   }
+  // One skinned mesh for the whole body (one draw call): each bone's rigid part, rigidly weighted to that bone.
+  root.updateMatrixWorld(true);
+  const bones = BONES.map(([n]) => B[n]) as unknown as THREE.Bone[];
+  const parts: THREE.BufferGeometry[] = [];
+  bones.forEach((b, bi) => {
+    const g = rig.local.get(b.name); if (!g) return;
+    const c = g.clone().applyMatrix4(b.matrixWorld), n = c.attributes.position.count;
+    c.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(new Uint16Array(n * 4).map((_, k) => (k % 4 === 0 ? bi : 0)), 4));
+    c.setAttribute('skinWeight', new THREE.Float32BufferAttribute(new Float32Array(n * 4).map((_, k) => (k % 4 === 0 ? 1 : 0)), 4));
+    parts.push(c);
+  });
+  const body = new THREE.SkinnedMesh(mergeGeometries(parts, false)!, vertexColorMaterial());
+  body.castShadow = true; body.receiveShadow = true; body.frustumCulled = false; // bounds move with the animation
+  root.add(body);
+  body.bind(new THREE.Skeleton(bones), new THREE.Matrix4());
   const list = BONES.map(([n]) => B[n]).filter((o) => o !== root);
   const rest = new Map(list.map((o) => [o, o.position.clone()]));
   const prev = list.map(() => new THREE.Quaternion());

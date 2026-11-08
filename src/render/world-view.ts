@@ -7,6 +7,7 @@ import { facadeMaterial, texturedMaterial, waterMaterial } from './materials';
 import { buildProp, buildPropLOD, type PropName } from './props/index';
 import { buildVehicle } from './vehicles/index';
 import { vertexColorMaterial } from './geo';
+import { PropBatch } from './prop-batch';
 
 const DEG = Math.PI / 180;
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(0, 0, 0, 'YZX'), _p = new THREE.Vector3(), _s = new THREE.Vector3();
@@ -38,26 +39,41 @@ const PROP_LOD: Record<string, number> = { Shrub: 70, 'Rock:small': 60, Rock: 90
   Bench: 80, Bin: 80, Umbrella: 100, Lounger: 80, BusStop: 120, Kiosk: 150, LifeguardTower: 150, Boat: 300 };
 const PROP_CULL: Record<string, number> = { Shrub: 500, 'Rock:small': 350, Rock: 700, Acacia: 800, Palm: 900, Ficus: 800,
   ContainerRed: 1500, ContainerBlue: 1500, ContainerGreen: 1500, ContainerGrey: 1500, PortCrane: 1e9, 'Hill:desert': 1e9,
-  'Hill:fields': 1e9, 'Hill:beige': 1e9, StreetLamp: 700, SolarHeater: 700, WaterTank: 700, ACUnit: 350, Boat: 2000 };
+  'Hill:fields': 1e9, 'Hill:beige': 1e9, StreetLamp: 700, SolarHeater: 700, WaterTank: 700, ACUnit: 350, Boat: 2000, Bench: 300, Bin: 300, Lounger: 300, Umbrella: 500 };
 
 export class WorldView {
   group = new THREE.Group();
   chunks: Chunk[] = [];
+  batch!: PropBatch;
   private flatMat: THREE.MeshStandardMaterial;
   constructor(scene: THREE.Scene, private gen: GenOutput, private tex: Textures) {
     scene.add(this.group);
     this.flatMat = flatInstancedMaterial();
     const unit = new THREE.BoxGeometry(1, 1, 1), cyl = new THREE.CylinderGeometry(0.5, 0.5, 1, 14);
+    // layers that share a material are drawn together (collision is separate): fewer draw calls
+    const MERGE: Record<string, string> = { flat_c: 'flat', cyl_c: 'cyl', facade_nc: 'facade' };
+    const merged = new Map<string, number[] | Float32Array>();
     for (const def of gen.layers) {
       const data = gen.boxes[def.key]; if (!data?.length || def.key === 'seabed') continue; // seabed: collider only, the opaque sea hides it
+      const into = MERGE[def.key] ?? def.key, prev = merged.get(into);
+      merged.set(into, prev ? Float32Array.from([...prev, ...data]) : data);
+    }
+    for (const def of gen.layers) {
+      const data = merged.get(def.key) as Float32Array | undefined; if (!data?.length) continue;
       let mat: THREE.Material, geo: THREE.BufferGeometry = unit;
       if (def.kind === 'facade') mat = facadeMaterial(tex);
       else if (def.kind === 'textured') mat = texturedMaterial(tex, def.set as TexSet, def.tint ?? [1, 1, 1], def.tile ?? 4, def.rough ? { roughMul: def.rough / 0.5 } : undefined);
       else { mat = this.flatMat; if (def.kind === 'flatcyl') geo = cyl; }
       const [size, cull] = CHUNK[def.key] ?? [500, def.key.startsWith('fl_') || def.key === 'in_plaster' ? 500 : 700];
-      this.buildBoxLayer(def.key, def.kind, data, geo, mat, size, cull, def.shadow);
+      this.buildBoxLayer(def.key, def.kind, data, geo, mat, size, def.key === 'facade' ? CHUNK.facade[1] : cull, def.shadow);
     }
-    for (const [name, data] of Object.entries(gen.props)) this.buildPropLayer(name, data);
+    const batched: [string, Float32Array][] = [];
+    for (const [name, data] of Object.entries(gen.props)) {
+      const base = name.split(':')[0];
+      if (base === 'vehicle' || base === 'Hill' || base === 'Rock') this.buildPropLayer(name, data);
+      else batched.push([name, data]);
+    }
+    this.batch = new PropBatch(scene, batched, (n) => PROP_LOD[n] ?? 100, (n) => PROP_CULL[n] ?? 600);
     // sea surface: world rect + 400 m, top at -0.15
     const [x0, y0, x1, y1] = [-1500, -14500, 7500, 8500];
     const sea = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + 800, y1 - y0 + 800, 1, 1), waterMaterial(tex));
@@ -159,6 +175,7 @@ export class WorldView {
   }
   /** Distance culling around the camera (map coords). */
   update(camX: number, camY: number) {
+    this.batch.update(camX, camY);
     for (const c of this.chunks) {
       const d = Math.hypot(c.cx - camX, c.cy - camY) - c.r, vis = d < c.cull;
       if (c.lod) { const near = d < c.lodDist!; c.obj.visible = vis && near; c.lod.visible = vis && !near; }
