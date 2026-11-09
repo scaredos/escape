@@ -1,0 +1,11 @@
+import { chromium } from '@playwright/test';
+const b = await chromium.launch({ args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const page = await b.newPage({ viewport: { width: 1280, height: 720 } });
+let errs = 0; page.on('pageerror', (e) => { errs++; console.log('ERR', e.message); }); page.on('console', (m) => { if (m.type() === 'error') { errs++; console.log('CONSOLE', m.text().slice(0, 200)); } });
+const t0 = Date.now();
+await page.goto('https://scaredos.github.io/escape/?autohost&nosave&mute');
+await page.waitForFunction(() => window.__ready === true, null, { timeout: 180000 });
+const room = await page.evaluate(() => new Promise((r) => { const t = setInterval(() => { const s = window.__session; if (s?.room) { clearInterval(t); r(s.room); } }, 250); setTimeout(() => r(null), 30000); }));
+console.log('ready_s', ((Date.now() - t0) / 1000).toFixed(1), 'room', room, 'errors', errs);
+await page.waitForTimeout(2000); await page.screenshot({ path: 'tests/screenshots/live.png' });
+await b.close();
