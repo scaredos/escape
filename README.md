@@ -56,12 +56,11 @@ npm test             # Playwright milestone tests (headless Chromium, SwiftShade
   PeerJS server (`npm run peer`).
 - Spec: `kit/spec/*.md`; decisions: `DECISIONS.md`.
 
-## Deploy (itch.io, password-protected)
-1. `npm run build`, then zip the *contents* of `dist/` (index.html at the zip root): `escape-israel-web.zip`.
-2. itch.io → Upload new project. Kind of project: **HTML**. Upload the zip, tick **This file will be played in the browser**.
-3. Embed options: viewport 1280×720, tick **Fullscreen button** (or "Click to launch in fullscreen").
-4. Visibility & access: **Restricted**, set a password, Save. Share the page URL + password with friends.
-5. In game, friends either type the room code under Join game, or open the invite link.
+## Deploy (GitHub Pages)
+Pushing to `main` runs `.github/workflows/pages.yml`: `npm ci`, `npm run build`, then publishes `dist/` to GitHub Pages
+(repo Settings → Pages → Source: GitHub Actions). The site is served at `https://<user>.github.io/<repo>/`; all asset paths
+are relative, so it works under the repo sub-path. Friends join with the room code or the invite link
+`https://<user>.github.io/<repo>/?join=CODE`.
 
 ## Credits
 Map data (c) OpenStreetMap contributors, ODbL 1.0. Copernicus DEM GLO-30 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and

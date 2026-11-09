@@ -10,7 +10,7 @@ test('combat, heat, soldiers, civilians, death', async ({ page }) => {
   const has = (ev: string, f: (o: any) => boolean = () => true) => probes.some((o) => o.event === ev && f(o));
   const waitFor = async (ev: string, f: (o: any) => boolean = () => true, ms = 30000) => {
     const end = Date.now() + ms; while (!has(ev, f)) { if (Date.now() > end) throw new Error('no ' + ev); await page.waitForTimeout(250); }
-    return probes.filter((o) => o.event === ev && f(o)).at(-1);
+    return probes.filter((o) => o.event === ev && f(o)).at(-1)!;
   };
   const feed = (t: string | RegExp) => probes.some((o) => o.event === 'feed' && (typeof t === 'string' ? o.text === t : t.test(o.text)));
 
@@ -73,7 +73,7 @@ test('combat, heat, soldiers, civilians, death', async ({ page }) => {
   await page.screenshot({ path: 'tests/screenshots/m4_dead.png' });
   await waitFor('respawn', () => true, 20000);
   expect(Date.now() - tDeath).toBeGreaterThan(9000);
-  const sp2 = probes.filter((o) => o.event === 'spawn' && o.role === 'human').at(-1);
+  const sp2 = probes.filter((o) => o.event === 'spawn' && o.role === 'human').at(-1)!;
   expect(sp2.safehouse).toBe('Safehouse (The Postel)');
   expect((await client(page)).priv.weapons.map((w: any) => w.type)).toEqual(['pistol']);   // weapons kept
 });
