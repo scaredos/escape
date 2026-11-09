@@ -51,7 +51,7 @@ async function start(mode: 'host' | 'join', room?: string, fresh = false) {
   try { await session.start(); } catch (e: any) { location.href = location.pathname + '?msg=' + encodeURIComponent(e.message || String(e)); return; }
   session.client.sens = settings.sens; session.client.fovFoot = settings.fov; session.audio.setVolume(params.has('mute') ? 0 : settings.volume / 100);
   bootEl.style.display = 'none';
-  if (!params.has('script')) stage.canvas.requestPointerLock?.();
+  if (!params.has('script')) stage.canvas.requestPointerLock?.()?.catch?.(() => {});
 }
 
 function showMenu(note = '') {

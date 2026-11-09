@@ -1,0 +1,18 @@
+import { createServer } from 'vite';
+import { chromium } from '@playwright/test';
+const server = await createServer({ server: { port: 0 }, logLevel: 'error' }); await server.listen();
+const port = server.httpServer.address().port;
+const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const page = await b.newPage({ viewport: { width: 640, height: 360 } });
+page.on('pageerror', (e) => console.log('ERR', e.message));
+page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console.log('CONSOLE', m.type(), m.text().slice(0, 200)); });
+page.on('framenavigated', (f) => { if (f === page.mainFrame()) console.log('NAV', f.url()); });
+await page.goto(`http://localhost:${port}/?autohost&nosave&mute&offline&quality=low`);
+await page.waitForFunction(() => window.__ready, null, { timeout: 120000 });
+await page.evaluate(() => window.__session.openMenu());
+await page.waitForTimeout(500);
+await page.click('#escmenu [data-a="leave"]');
+await page.waitForTimeout(20000);
+await page.screenshot({ path: 'tests/screenshots/leave.png' });
+console.log('DOM', await page.evaluate(() => document.body.innerHTML.slice(0, 300)));
+await b.close(); await server.close();

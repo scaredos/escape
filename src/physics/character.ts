@@ -17,14 +17,14 @@ export function maxWalk(inp: MoveInput, bag: boolean): number {
 
 export class CharBody {
   collider: RAPIER.Collider;
-  body: RAPIER.RigidBody;
   kcc: RAPIER.KinematicCharacterController;
   constructor(private phys: Phys, x: number, y: number, z: number) {
     const W = phys.world;
-    this.body = W.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(x, y, z));
-    // capsule axis is local Y in Rapier: rotate it to Z
-    this.collider = W.createCollider(RAPIER.ColliderDesc.capsule(CAPSULE_HALF - CAPSULE_R, CAPSULE_R)
-      .setRotation({ x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 }).setCollisionGroups(groups(G_CHAR, G_STATIC | G_CAR)), this.body);
+    // Standalone collider (no rigid body): its position updates immediately, so every movement step is computed from where
+    // the character really is. A body-attached collider only moves on world.step(), which let the capsule sink ~0.3 m.
+    // Capsule axis is local Y in Rapier: rotate it to Z.
+    this.collider = W.createCollider(RAPIER.ColliderDesc.capsule(CAPSULE_HALF - CAPSULE_R, CAPSULE_R).setTranslation(x, y, z)
+      .setRotation({ x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 }).setCollisionGroups(groups(G_CHAR, G_STATIC | G_CAR)));
     this.kcc = W.createCharacterController(0.02);
     this.kcc.setUp({ x: 0, y: 0, z: 1 });
     this.kcc.enableAutostep(0.45, 0.2, false);
@@ -33,7 +33,7 @@ export class CharBody {
     this.kcc.setApplyImpulsesToDynamicBodies(true);
   }
   setEnabled(on: boolean) { this.collider.setEnabled(on); }
-  teleport(x: number, y: number, z: number) { this.body.setTranslation({ x, y, z }, true); this.body.setNextKinematicTranslation({ x, y, z }); }
+  teleport(x: number, y: number, z: number) { this.collider.setTranslation({ x, y, z }); }
   /** Advance one step; mutates `s` (position = capsule centre). */
   step(s: MoveState, inp: MoveInput, dt: number, bag: boolean) {
     const fx = Math.cos(inp.yaw), fy = Math.sin(inp.yaw), rx = fy, ry = -fx;
@@ -45,7 +45,7 @@ export class CharBody {
     if (el <= rate) { s.vx = tx; s.vy = ty; } else { s.vx += (ex / el) * rate; s.vy += (ey / el) * rate; }
     if (s.grounded && inp.jump) { s.vz = JUMP_V; s.grounded = false; }
     s.vz -= GRAVITY * dt;
-    this.body.setTranslation({ x: s.x, y: s.y, z: s.z }, false);
+    this.collider.setTranslation({ x: s.x, y: s.y, z: s.z });
     this.kcc.computeColliderMovement(this.collider, { x: s.vx * dt, y: s.vy * dt, z: s.vz * dt }, undefined, groups(G_CHAR, G_STATIC | G_CAR));
     const m = this.kcc.computedMovement();
     const grounded = this.kcc.computedGrounded();
@@ -55,8 +55,16 @@ export class CharBody {
     s.x += m.x; s.y += m.y; s.z += m.z;
     if (grounded && s.vz < 0) s.vz = 0;
     s.grounded = grounded; s.airTime = grounded ? 0 : s.airTime + dt;
+    // ground probe: the controller can settle up to ~0.2 m into the floor while moving; keep the feet on the ground top
+    if (s.vz <= 0) {
+      const hit = this.phys.ray(s.x, s.y, s.z, 0, 0, -1, CAPSULE_HALF + 0.35, G_STATIC);
+      if (hit) {
+        const groundTop = s.z - hit.toi, want = groundTop + CAPSULE_HALF + 0.02;
+        if (s.z < want) { s.z = want; s.vz = 0; s.grounded = true; s.airTime = 0; }
+      }
+    }
     if (s.z < -20) { s.z = 2; s.vz = 0; } // fell through: pop up (no fall damage)
-    this.body.setNextKinematicTranslation({ x: s.x, y: s.y, z: s.z });
+    this.collider.setTranslation({ x: s.x, y: s.y, z: s.z });
   }
-  dispose() { this.phys.world.removeCharacterController(this.kcc); this.phys.world.removeRigidBody(this.body); }
+  dispose() { this.phys.world.removeCharacterController(this.kcc); this.phys.world.removeCollider(this.collider, false); }
 }

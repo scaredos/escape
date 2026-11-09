@@ -78,7 +78,8 @@ export class EntityView {
       e.vis.update(dt, { state: 'dead', speed: 0, held: 'none' });
       return;
     }
-    toThree(r[E.x], r[E.y], r[E.z], e.root.position);
+    // +3 cm: roads/sidewalks are drawn a few cm above the collision ground
+    toThree(r[E.x], r[E.y], r[E.z] + ((r[E.f] & A.SEATED) ? 0 : 0.03), e.root.position);
     e.root.quaternion.identity(); e.vis.root.position.set(0, 0, 0);
     e.root.rotation.y = r[E.yaw];
     e.root.visible = r[E.id] !== this.hiddenId;

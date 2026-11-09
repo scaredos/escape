@@ -126,8 +126,8 @@ export class Session {
   private setupPointer() {
     const canvas = this.world.stage.canvas;
     const overlay = document.createElement('div'); overlay.id = 'clicktoplay'; overlay.textContent = 'Click to play'; document.body.appendChild(overlay);
-    canvas.addEventListener('click', () => { if (!this.menuOpen && !this.con.open) canvas.requestPointerLock?.(); });
-    overlay.addEventListener('click', () => canvas.requestPointerLock?.());
+    canvas.addEventListener('click', () => { if (!this.menuOpen && !this.con.open) canvas.requestPointerLock?.()?.catch?.(() => {}); });
+    overlay.addEventListener('click', () => canvas.requestPointerLock?.()?.catch?.(() => {}));
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement === canvas;
       if (!locked && !this.con.open && !this.menuOpen && !this.ended && this.worldReady && !this.opts.params.has('script')) this.openMenu();
@@ -145,7 +145,7 @@ export class Session {
     document.body.appendChild(m);
     m.addEventListener('click', (e) => {
       const a = (e.target as HTMLElement).dataset.a;
-      if (a === 'resume') { this.menuOpen = false; m.remove(); this.world.stage.canvas.requestPointerLock?.(); }
+      if (a === 'resume') { this.menuOpen = false; m.remove(); this.world.stage.canvas.requestPointerLock?.()?.catch?.(() => {}); }
       if (a === 'copy') navigator.clipboard?.writeText(link);
       if (a === 'controls') (m.querySelector('.ctl') as HTMLElement).innerHTML = CONTROLS_HTML;
       if (a === 'leave') { m.remove(); this.menuOpen = false; this.exit(); }
@@ -191,10 +191,15 @@ export class Session {
   };
   exit(msg?: string) {
     if (this.ended) return; this.ended = true;
-    this.sim?.save.worldEnd();
-    this.stopTicker?.(); cancelAnimationFrame(this.raf);
-    removeEventListener('beforeunload', this.onUnload);
-    try { this.client.link.close(); } catch { /* */ }
+    // every cleanup step is best-effort: leaving must always land back on the menu
+    const tryDo = (f: () => void) => { try { f(); } catch (e) { console.warn('exit', e); } };
+    tryDo(() => this.sim?.save.worldEnd());
+    tryDo(() => this.stopTicker?.()); tryDo(() => cancelAnimationFrame(this.raf));
+    tryDo(() => removeEventListener('beforeunload', this.onUnload));
+    tryDo(() => document.exitPointerLock?.());
+    tryDo(() => this.client.link.close());
+    const ov = document.createElement('div'); ov.id = 'boot'; ov.innerHTML = '<div class="t">Escape Israel</div><div class="l">Back to the menu…</div>';
+    tryDo(() => document.body.appendChild(ov));
     this.opts.onExit(msg);
   }
 }

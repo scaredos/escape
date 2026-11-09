@@ -69,7 +69,10 @@ export function runCheat(sim: Sim, p: Player, line: string) {
         const yaw = (parseFloat(args[1]) || 0) * Math.PI / 180, c = sim.cars.spawn((args[2] as any) || 'sedan', h.x, h.y, 0.5, yaw);
         sim.cars.enter(p, c); probe('cheat_car', { mode, car: c.id, in: true }); break;
       }
-      if (mode === 'traffic') sim.cars.traffic.frozen = true;
+      if (mode === 'traffic') { // freeze traffic dead so the car stays where we stand
+        sim.cars.traffic.frozen = true;
+        for (const c of sim.cars.traffic.list()) { c.body.setLinvel({ x: 0, y: 0, z: 0 }, true); c.body.setAngvel({ x: 0, y: 0, z: 0 }, true); c.speed = 0; }
+      }
       let best = null as any, bd = Infinity;
       for (const c of sim.cars.cars.values()) {
         if (c.driver || (mode === 'traffic' ? !c.npc : c.npc)) continue;
